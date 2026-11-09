@@ -10,3 +10,13 @@ DEST="$ROOT/extern/endjinn"
 [ -d "$DEST/.git" ] || git clone https://github.com/dfchil/enDjinn.git "$DEST"
 git -C "$DEST" fetch origin 2>/dev/null || true
 git -C "$DEST" checkout --detach "$ENDJINN_COMMIT"
+
+# Naomi: expose KOS's MIE/JVS mapped controller state through enDjinn's
+# existing normalized controller slots. Keep the patch in this repository.
+PATCH="$ROOT/platform/naomi/patches/endjinn-mie-input.patch"
+if git -C "$DEST" apply --check "$PATCH" >/dev/null 2>&1; then
+    git -C "$DEST" apply "$PATCH"
+elif ! git -C "$DEST" apply --reverse --check "$PATCH" >/dev/null 2>&1; then
+    echo "Cannot apply or verify the Naomi MIE input patch: $PATCH" >&2
+    exit 1
+fi

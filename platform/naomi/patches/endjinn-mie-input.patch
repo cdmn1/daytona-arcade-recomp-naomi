@@ -1,0 +1,92 @@
+diff --git a/code/enj_ctrl.c b/code/enj_ctrl.c
+--- a/code/enj_ctrl.c
++++ b/code/enj_ctrl.c
+@@ -1,4 +1,7 @@
+ #include <enDjinn/enj_ctrl.h>
++#if defined(_arch_sub_naomi)
++#include <dc/maple/mie.h>
++#endif
+ 
+ // Note improved callback based state handling inspired by this code by
+ // darcagn/Eric Fradella
+@@ -8,6 +11,9 @@ alignas(32) static enj_ctrlr_state_t ctrlr_states_storage[MAPLE_PORT_COUNT] = {
+     0};
+ alignas(32) static enj_ctrlr_state_t *ctrlr_states_refs[MAPLE_PORT_COUNT] = {0};
+ alignas(32) static maple_device_t *local_controllers[MAPLE_PORT_COUNT] = {0};
++#if defined(_arch_sub_naomi)
++alignas(32) static maple_device_t *local_mie_devices[MAPLE_PORT_COUNT] = {0};
++#endif
+ 
+ /* Called at init and then only as a callback when controller
+    devices are connected or disconnected */
+@@ -18,6 +24,12 @@ void scan_local_controllers(maple_device_t *__unused, void *__unused) {
+   for (int i = 0; i < MAPLE_PORT_COUNT; i++) {
+     local_controllers[i] = NULL;
+   }
++#if defined(_arch_sub_naomi)
++  for (int i = 0; i < MAPLE_PORT_COUNT; i++) {
++    local_mie_devices[i] = NULL;
++  }
++#endif
+ 
+   /* Loop through all available controllers
+      and assign them to the proper ports */
+@@ -28,6 +40,15 @@ void scan_local_controllers(maple_device_t *__unused, void *__unused) {
+     local_controllers[cont->port] = cont;
+     i++;
+   }
++#if defined(_arch_sub_naomi)
++  i = 0;
++  while ((cont = maple_enum_type(i, MAPLE_FUNC_MIE))) {
++    if (cont->port < MAPLE_PORT_COUNT) {
++      local_mie_devices[cont->port] = cont;
++    }
++    i++;
++  }
++#endif
+ }
+ 
+ void enj_ctrl_init_local_devices(void) {
+@@ -35,6 +56,10 @@ void enj_ctrl_init_local_devices(void) {
+   scan_local_controllers(NULL, NULL);
+   maple_attach_callback(MAPLE_FUNC_CONTROLLER, scan_local_controllers, NULL);
+   maple_detach_callback(MAPLE_FUNC_CONTROLLER, scan_local_controllers, NULL);
++#if defined(_arch_sub_naomi)
++  maple_attach_callback(MAPLE_FUNC_MIE, scan_local_controllers, NULL);
++  maple_detach_callback(MAPLE_FUNC_MIE, scan_local_controllers, NULL);
++#endif
+ }
+@@ -48,8 +73,22 @@ size_t enj_ctrl_map_states(void) {
+   size_t count = 0;
+   for (int i = 0; i < MAPLE_PORT_COUNT; i++) {
+     maple_device_t *device = local_controllers[i];
++    cont_state_t *new_state = NULL;
+     if (device && device->valid) {
+-      cont_state_t *new_state = (cont_state_t *)maple_dev_status(device);
++      new_state = (cont_state_t *)maple_dev_status(device);
++    }
++#if defined(_arch_sub_naomi)
++    else {
++      device = local_mie_devices[i];
++      if (device && device->valid) {
++        mie_state_t *mie = (mie_state_t *)maple_dev_status(device);
++        if (mie) {
++          new_state = &mie->cont;
++        }
++      }
++    }
++#endif
++    if (new_state) {
+         if (new_state) {
+         ctrlr_states_refs[i] = ctrlr_states_storage + i;
+         ctrlr_states_refs[i]->state = new_state;
+@@ -61,7 +100,7 @@ size_t enj_ctrl_map_states(void) {
+         ctrlr_states_refs[i]->portnum = i;
+         count++;
+-      } else {
+-        ctrlr_states_refs[i] = NULL;
+-      }
+     } else {
+       ctrlr_states_refs[i] = NULL;
+     }
+   }
