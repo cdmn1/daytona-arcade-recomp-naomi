@@ -56,7 +56,8 @@ diff --git a/code/enj_ctrl.c b/code/enj_ctrl.c
 +  maple_detach_callback(MAPLE_FUNC_MIE, scan_local_controllers, NULL);
 +#endif
  }
-@@ -48,8 +73,22 @@ size_t enj_ctrl_map_states(void) {
+ 
+@@ -48,17 +73,27 @@ size_t enj_ctrl_map_states(void) {
    size_t count = 0;
    for (int i = 0; i < MAPLE_PORT_COUNT; i++) {
      maple_device_t *device = local_controllers[i];
@@ -77,15 +78,12 @@ diff --git a/code/enj_ctrl.c b/code/enj_ctrl.c
 +    }
 +#endif
 +    if (new_state) {
-         if (new_state) {
-         ctrlr_states_refs[i] = ctrlr_states_storage + i;
-         ctrlr_states_refs[i]->state = new_state;
-@@ -61,7 +100,7 @@ size_t enj_ctrl_map_states(void) {
-         ctrlr_states_refs[i]->portnum = i;
-         count++;
--      } else {
--        ctrlr_states_refs[i] = NULL;
--      }
+       ctrlr_states_refs[i] = ctrlr_states_storage + i;
+       ctrlr_states_refs[i]->state = new_state;
+       // Map the cont_state_t onto enj_ctrlr_state_t
+       enj_ctrl_kos2enj_state(new_state, ctrlr_states_refs[i]);
+       ctrlr_states_refs[i]->portnum = i;
+       count++;
      } else {
        ctrlr_states_refs[i] = NULL;
      }
