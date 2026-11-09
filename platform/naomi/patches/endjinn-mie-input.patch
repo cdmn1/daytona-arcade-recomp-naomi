@@ -57,13 +57,14 @@ diff --git a/code/enj_ctrl.c b/code/enj_ctrl.c
 +#endif
  }
  
-@@ -48,17 +73,27 @@ size_t enj_ctrl_map_states(void) {
+@@ -40,22 +65,31 @@ size_t enj_ctrl_map_states(void) {
    size_t count = 0;
    for (int i = 0; i < MAPLE_PORT_COUNT; i++) {
      maple_device_t *device = local_controllers[i];
 +    cont_state_t *new_state = NULL;
      if (device && device->valid) {
 -      cont_state_t *new_state = (cont_state_t *)maple_dev_status(device);
+-      if (new_state) {
 +      new_state = (cont_state_t *)maple_dev_status(device);
 +    }
 +#if defined(_arch_sub_naomi)
@@ -78,12 +79,15 @@ diff --git a/code/enj_ctrl.c b/code/enj_ctrl.c
 +    }
 +#endif
 +    if (new_state) {
-       ctrlr_states_refs[i] = ctrlr_states_storage + i;
-       ctrlr_states_refs[i]->state = new_state;
-       // Map the cont_state_t onto enj_ctrlr_state_t
-       enj_ctrl_kos2enj_state(new_state, ctrlr_states_refs[i]);
-       ctrlr_states_refs[i]->portnum = i;
-       count++;
+         ctrlr_states_refs[i] = ctrlr_states_storage + i;
+         ctrlr_states_refs[i]->state = new_state;
+         // Map the cont_state_t onto enj_ctrlr_state_t
+         enj_ctrl_kos2enj_state(new_state, ctrlr_states_refs[i]);
+         ctrlr_states_refs[i]->portnum = i;
+         count++;
+-      } else {
+-        ctrlr_states_refs[i] = NULL;
+-      }
      } else {
        ctrlr_states_refs[i] = NULL;
      }
