@@ -19,7 +19,7 @@ diff --git a/code/enj_ctrl.c b/code/enj_ctrl.c
  
  /* Called at init and then only as a callback when controller
     devices are connected or disconnected */
-@@ -18,6 +24,12 @@ void scan_local_controllers(maple_device_t *__unused, void *__unused) {
+@@ -18,6 +24,11 @@ void scan_local_controllers(maple_device_t *__unused, void *__unused) {
    for (int i = 0; i < MAPLE_PORT_COUNT; i++) {
      local_controllers[i] = NULL;
    }
@@ -47,7 +47,7 @@ diff --git a/code/enj_ctrl.c b/code/enj_ctrl.c
  }
  
  void enj_ctrl_init_local_devices(void) {
-@@ -35,6 +56,10 @@ void enj_ctrl_init_local_devices(void) {
+@@ -35,5 +56,9 @@ void enj_ctrl_init_local_devices(void) {
    scan_local_controllers(NULL, NULL);
    maple_attach_callback(MAPLE_FUNC_CONTROLLER, scan_local_controllers, NULL);
    maple_detach_callback(MAPLE_FUNC_CONTROLLER, scan_local_controllers, NULL);
@@ -57,7 +57,7 @@ diff --git a/code/enj_ctrl.c b/code/enj_ctrl.c
 +#endif
  }
  
-@@ -40,22 +65,31 @@ size_t enj_ctrl_map_states(void) {
+@@ -41,19 +65,29 @@ size_t enj_ctrl_map_states(void) {
    size_t count = 0;
    for (int i = 0; i < MAPLE_PORT_COUNT; i++) {
      maple_device_t *device = local_controllers[i];
