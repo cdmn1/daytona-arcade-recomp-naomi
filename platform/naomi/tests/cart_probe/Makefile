@@ -9,6 +9,7 @@ $(error KOS_BASE is unset. Source the Naomi KOS environ.sh first)
 endif
 
 CFLAGS += -I../../include
+NAOMIBINTOOL ?= $(KOS_BASE)/utils/naomibintool/naomibintool
 
 TARGET = naomi_cart_probe.elf
 ROM = naomi_cart_probe.bin
@@ -19,7 +20,7 @@ all: $(TARGET)
 rom: $(ROM)
 
 $(ROM): $(TARGET)
-	naomibintool build $@ -e $<
+	$(NAOMIBINTOOL) build $@ -e $<
 
 include $(KOS_BASE)/Makefile.rules
 
