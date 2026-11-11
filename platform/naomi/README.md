@@ -64,10 +64,9 @@ make -C platform/naomi/tests/cart_probe rom
 ```
 
 This produces `naomi_cart_probe.bin`. It reads the Naomi ROM header through
-the ROM-board PIO registers, reports the executable segment, and checks for
-an appended ROMFS. Since this diagnostic does not include a filesystem, a
-"No appended ROMFS" message is expected; the important first result is a
-valid Naomi header read.
+the ROM-board PIO registers, mounts the appended test ROMFS at `/naomi/`,
+and opens `/naomi/probe.txt`. A successful run prints the known payload,
+verifying both NetDIMM PIO reads and the read-only KOS VFS end to end.
 
 ## Input integration
 
