@@ -1,3 +1,7 @@
+/*
+ * Naomi ROM-board PIO access, adapted from the public-domain cart reader in
+ * DragonMinded/libnaomi (libnaomi/cart.c).
+ */
 #include "naomi_cart.h"
 
 #include <errno.h>
