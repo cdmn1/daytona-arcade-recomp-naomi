@@ -52,7 +52,9 @@ def append_romfs(base_path: Path, fs_path: Path, output_path: Path) -> int:
         raise ValueError("executable segment exceeds the 256 MiB PIO address range")
 
     fs_offset = (segment_offset + segment_size + 3) & ~3
-    if fs_offset > PIO_LIMIT or len(romfs) > PIO_LIMIT - fs_offset:
+    image_end = fs_offset + len(romfs)
+    final_size = (image_end + 1023) & ~1023
+    if final_size > PIO_LIMIT:
         raise ValueError(
             "final ROM exceeds the 256 MiB PIO address range; a DMA reader is required"
         )
@@ -66,7 +68,7 @@ def append_romfs(base_path: Path, fs_path: Path, output_path: Path) -> int:
     elif len(image) < fs_offset:
         image += bytes(fs_offset - len(image))
 
-    result = image + romfs
+    result = image + romfs + bytes(final_size - image_end)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_bytes(result)
     return len(result)
