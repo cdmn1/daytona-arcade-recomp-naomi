@@ -2,13 +2,21 @@
 #include <sh4zam/shz_sh4zam.h>
 #include <malloc.h>
 #include <stdio.h>
+#include <errno.h>
+#if defined(_arch_sub_naomi)
+#include "naomi_romfs.h"
+#endif
 #ifdef NATIVE_DISC
 #include <kos/dbgio.h>
 #endif
 #include "practice.h"
 #include "render/materials/palette_ram.h"
-#ifndef NM_ASSET_ROOT /* make NATIVE_ASSET_ROOT=..., /cd/ with NATIVE_DISC=1 (local.cfg.mk) */
+#ifndef NM_ASSET_ROOT /* Naomi: resident NetDIMM ROMFS; Dreamcast: dcload / disc. */
+#if defined(_arch_sub_naomi)
+#define NM_ASSET_ROOT "/naomi/"
+#else
 #define NM_ASSET_ROOT "/pc/"
+#endif
 #endif
 #include "../tests/startup_check.h"
 #ifndef NM_PT_CHUNK
@@ -65,6 +73,14 @@ static int check_math(void) {
 }
 
 int main(void) {
+#if defined(_arch_sub_naomi)
+    /* The image's ROMFS stays on the NetDIMM; mount a read-only VFS before
+     * any scene or music loader tries to open an asset. */
+    if (naomi_romfs_init_default() != 0) {
+        printf("Naomi ROMFS mount failed (errno=%d)\\n", errno);
+        return 1;
+    }
+#endif
 #if defined(NATIVE_DISC) && !defined(NM_DISC_CONSOLE)
     /* From a disc nobody reads the console: KOS would write it to the serial port, waiting on the port's FIFO at
      * 115200 baud (a long report line about 10 ms). make NATIVE_DISC_CONSOLE=1 keeps it (a serial cable, Flycast). */
