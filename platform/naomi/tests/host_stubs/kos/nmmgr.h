@@ -1,6 +1,7 @@
 #ifndef NAOMI_HOST_STUB_KOS_NMMGR_H
 #define NAOMI_HOST_STUB_KOS_NMMGR_H
 #include <stdint.h>
+#include <stddef.h>
 #define NAME_MAX 256
 #define NMMGR_TYPE_VFS 0x0010
 #define NMMGR_LIST_INIT { NULL }
