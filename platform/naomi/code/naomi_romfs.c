@@ -129,11 +129,16 @@ static int load_directory(uint32_t offset, uint32_t entries,
                           naomi_romfs_entry_t **directory) {
     size_t bytes;
 
-    if (!entries || entries > SIZE_MAX / sizeof(naomi_romfs_entry_t)) {
+    if (!entries) {
         errno = EOVERFLOW;
         return -1;
     }
     bytes = (size_t)entries * sizeof(naomi_romfs_entry_t);
+    /* Detect size_t multiplication overflow without a 64-bit host warning. */
+    if (bytes / entries != sizeof(naomi_romfs_entry_t)) {
+        errno = EOVERFLOW;
+        return -1;
+    }
     if (offset >= NAOMI_CART_LIMIT || bytes > NAOMI_CART_LIMIT - offset) {
         errno = EOVERFLOW;
         return -1;
