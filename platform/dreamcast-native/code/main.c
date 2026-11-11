@@ -77,7 +77,7 @@ int main(void) {
     /* The image's ROMFS stays on the NetDIMM; mount a read-only VFS before
      * any scene or music loader tries to open an asset. */
     if (naomi_romfs_init_default() != 0) {
-        printf("Naomi ROMFS mount failed (errno=%d)\\n", errno);
+        printf("Naomi ROMFS mount failed (errno=%d)\n", errno);
         return 1;
     }
 #endif
