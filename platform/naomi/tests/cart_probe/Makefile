@@ -11,9 +11,15 @@ endif
 CFLAGS += -I../../include
 
 TARGET = naomi_cart_probe.elf
+ROM = naomi_cart_probe.bin
 OBJS = main.o ../../code/naomi_cart.o
 
 all: $(TARGET)
+
+rom: $(ROM)
+
+$(ROM): $(TARGET)
+	naomibintool build $@ -e $<
 
 include $(KOS_BASE)/Makefile.rules
 
@@ -21,6 +27,6 @@ $(TARGET): $(OBJS)
 	kos-cc -o $@ $(OBJS)
 
 clean:
-	-rm -f $(TARGET) $(OBJS)
+	-rm -f $(TARGET) $(ROM) $(OBJS)
 
-.PHONY: all clean
+.PHONY: all rom clean
