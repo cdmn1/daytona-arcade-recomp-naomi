@@ -96,12 +96,8 @@ jobs:
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
           make -C "$KOS_BASE" -j2
-
-      - name: Build NetDIMM storage probe
-        run: make -C platform/naomi/tests/cart_probe clean rom
-
-      - name: Build JVS and controller input probe
-        run: make -C platform/naomi/tests/input_probe clean rom
+          make -C "$GITHUB_WORKSPACE/platform/naomi/tests/cart_probe" clean rom
+          make -C "$GITHUB_WORKSPACE/platform/naomi/tests/input_probe" clean rom
 
       - name: Upload Naomi probe binaries
         uses: actions/upload-artifact@v4
