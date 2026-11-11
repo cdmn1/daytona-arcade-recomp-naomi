@@ -17,20 +17,25 @@ Example environment setup (adjust the KOS path to the installed Naomi tree):
 ```sh
 export KOS_SUBARCH=naomi
 source /opt/toolchains/dc/kos-naomi/environ.sh
-source platform/dreamcast-native/extern/endjinn/environ.sh
 ```
 
 The exact KOS path is installation-specific. Do not source a Dreamcast-only
 KOS tree and assume that changing the variable afterwards retargets its
-already-built libraries.
+already-built libraries. The standalone input probe does not need enDjinn,
+game assets, or AICAflow.
 
 ## First bring-up test
 
 Build the standalone KOS input probe:
 
 ```sh
-make -C platform/naomi/tests/input_probe
+make -C platform/naomi/tests/input_probe clean all
 ```
+
+The Makefile refuses to build unless the active environment explicitly has
+`KOS_SUBARCH=naomi` and `KOS_BASE` set. The output is
+`platform/naomi/tests/input_probe/naomi_input_probe.elf`. This is a Naomi ELF
+diagnostic, not the final NetDIMM `.bin` image.
 
 It reports:
 - the Naomi MIE/JVS bridge and its mapped controller state;
