@@ -51,7 +51,11 @@ def append_romfs(base_path: Path, fs_path: Path, output_path: Path) -> int:
     if segment_offset >= PIO_LIMIT or segment_size > PIO_LIMIT - segment_offset:
         raise ValueError("executable segment exceeds the 256 MiB PIO address range")
 
-    fs_offset = (segment_offset + segment_size + 3) & ~3
+    segment_end = segment_offset + segment_size
+    if len(image) < segment_end:
+        raise ValueError("base ROM is truncated before the executable segment ends")
+
+    fs_offset = (segment_end + 3) & ~3
     image_end = fs_offset + len(romfs)
     final_size = (image_end + 1023) & ~1023
     if final_size > PIO_LIMIT:
