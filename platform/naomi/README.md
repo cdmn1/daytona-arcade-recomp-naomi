@@ -98,8 +98,9 @@ server as a runtime dependency.
 KOS's documented `/cd` ISO9660 filesystem is Dreamcast-only. Therefore the
 Dreamcast port's `NATIVE_DISC=1` and `/cd/` path is **not** assumed to work on
 Naomi. The Naomi ROM-board PIO access path is now identified and has an initial
-reader; it still needs Flycast and hardware validation before being used by
-the game asset loader.
+reader. A read-only KOS VFS now mounts the appended ROMFS at `/naomi/` before
+the game starts, so existing `fopen`/read/seek-based asset loaders can read
+files directly from the resident image.
 
 KOS also supplies `naomibintool`, which wraps a Naomi-targeted SH-4 ELF in
 the Naomi ROM header format to produce the uploadable `.bin`. Its current
@@ -107,19 +108,28 @@ implementation packs one ELF image as one load segment; it is a ROM-image
 builder, not a general-purpose asset filesystem or a way to map a large game
 archive into Naomi main RAM.
 
-The first runtime access primitive is now in
-`code/naomi_cart.c`: it reads the image through the Naomi ROM-board PIO
-registers in bounded 1 KiB transfers, without loading the whole image into
-main RAM. The matching `tests/cart_probe` diagnostic reads the Naomi ROM
-header and checks for an appended ROMFS.
+The PIO reader in `code/naomi_cart.c` reads bounded 1 KiB blocks without
+copying the whole image into main RAM. `code/naomi_romfs.c` implements a
+read-only KOS VFS at `/naomi/`; it supports file open/read/seek/stat and
+keeps a small per-file cache. Directory enumeration and writes are not
+implemented.
+
+The ROM image build is now wired into `platform/dreamcast-native/Makefile`.
+With the Naomi KOS environment and the existing game assets configured, run:
+
+```sh
+make -C platform/dreamcast-native naomi-bin
+```
+
+This builds the ELF, wraps it with KOS `naomibintool`, creates a ROMFS from
+`ROMBASEPATH`, and appends it after the executable segment. The output is
+`platform/dreamcast-native/bin/*.naomi.bin`, ready for the existing NetDIMM
+uploader.
 
 This initial PIO implementation addresses the low 256 MiB only (the register
 address field is 28 bits). A 512 MB image needs a separate DMA-based reader if
-assets extend beyond that range. PIO behaviour still needs a real Naomi or
-Flycast test. The next storage task is a read-only KOS VFS for the ROMFS format
-used by the existing Naomi homebrew tooling, followed by a packaging target
-that appends that filesystem after the executable segment. The final image
-will then go through the user's existing NetDIMM uploader.
+assets extend beyond that range. The VFS, PIO reads, and final image still
+need real Naomi KOS compilation plus Flycast and hardware validation.
 
 Do not silently fall back to
 `/pc/`, `/cd/`, network filesystems, or a host-mounted directory.
@@ -132,12 +142,15 @@ Do not silently fall back to
 - [x] enDjinn MIE-to-controller compatibility patch prepared.
 - [x] ROM-free input probe source and Makefile added.
 - [x] Naomi ROM-board PIO read primitive and ROM-header diagnostic added.
-- [x] Host C syntax checks passed for the new PIO reader and diagnostic using minimal KOS stubs.
-- [ ] Build both probes with a real Naomi KOS toolchain (not yet compiled in this environment).
+- [x] Read-only ROMFS VFS source added and mounted at `/naomi/` in Naomi builds.
+- [x] ROMFS generator, Naomi image appender, and host-side format tests added.
+- [x] Naomi product build target added (`make naomi-bin`).
+- [x] Host C syntax checks passed for the PIO reader and cart diagnostic using minimal KOS stubs; the VFS has not yet been compiled.
+- [ ] Run ROMFS tooling tests in GitHub Actions.
+- [ ] Build both probes and the full game with a real Naomi KOS toolchain (not yet compiled in this environment).
 - [ ] Verify PIO reads in Flycast and on Naomi 1 with a NetDIMM.
 - [ ] Run probe in Flycast.
 - [ ] Run probe on Naomi 1 with JVS cabinet and with a standard Maple controller.
-- [ ] Implement the read-only Naomi ROMFS VFS and image packaging target.
 - [ ] Add Naomi product build and validate PVR/AICA startup.
 - [ ] Integrate fixed 57.52 Hz simulation cadence and verify on hardware.
 - [ ] Implement Naomi save/settings backend (or explicitly disable saving initially).
