@@ -9,7 +9,8 @@
 #include <dc/maple/controller.h>
 #include <dc/maple/mie.h>
 
-KOS_INIT_FLAGS(INIT_DEFAULT);
+/* Naomi's MIE/JVS bridge is an opt-in KOS subsystem. */
+KOS_INIT_FLAGS(INIT_DEFAULT | INIT_MIE);
 
 int main(void) {
     puts("Daytona Naomi input probe");
