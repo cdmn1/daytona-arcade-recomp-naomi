@@ -38,6 +38,12 @@ $(NAOMI_BIN): $(NAOMI_BASE_BIN) $(NAOMI_ROMFS)
 	python3 ../naomi/tools/append_romfs.py $< $(NAOMI_ROMFS) $@
 
 naomi-bin: $(NAOMI_BIN)
+
+.PHONY: naomi-clean
+naomi-clean:
+	-rm -f $(NAOMI_BASE_BIN) $(NAOMI_ROMFS) $(NAOMI_BIN)
+
+clean: naomi-clean
 endif
 
 $(OBJS): Makefile local.cfg.mk
