@@ -8,6 +8,8 @@ ifeq ($(KOS_BASE),)
 $(error KOS_BASE is unset. Source the Naomi KOS environ.sh first)
 endif
 
+CFLAGS += -I../../include
+
 TARGET = naomi_cart_probe.elf
 OBJS = main.o ../../code/naomi_cart.o
 
