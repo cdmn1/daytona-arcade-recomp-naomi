@@ -20,3 +20,5 @@ jobs:
           python3 -m py_compile platform/naomi/tools/append_romfs.py
       - name: Test ROMFS layout and image packaging
         run: python3 -m unittest discover -s platform/naomi/tests -p 'test_*.py'
+      - name: Host syntax-check Naomi storage C
+        run: sh platform/naomi/tests/check_host_syntax.sh
