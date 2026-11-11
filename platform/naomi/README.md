@@ -86,13 +86,21 @@ implementation packs one ELF image as one load segment; it is a ROM-image
 builder, not a general-purpose asset filesystem or a way to map a large game
 archive into Naomi main RAM.
 
-The game still needs a runtime reader for the resident image on the Naomi ROM
-board / NetDIMM path (including the appropriate G1/ROM-board DMA or PIO
-mechanism). That interface must be verified against KOS and hardware/emulator
-behaviour before the game asset VFS is written. The final packaging step will
-use the KOS Naomi ROM format and then the user's existing NetDIMM uploader.
+The first runtime access primitive is now in
+`code/naomi_cart.c`: it reads the image through the Naomi ROM-board PIO
+registers in bounded 1 KiB transfers, without loading the whole image into
+main RAM. The matching `tests/cart_probe` diagnostic reads the Naomi ROM
+header and checks for an appended ROMFS.
 
-No Naomi asset backend is selected yet. Do not silently fall back to
+This initial PIO implementation addresses the low 256 MiB only (the register
+address field is 28 bits). A 512 MB image needs a separate DMA-based reader if
+assets extend beyond that range. PIO behaviour still needs a real Naomi or
+Flycast test. The next storage task is a read-only KOS VFS for the ROMFS format
+used by the existing Naomi homebrew tooling, followed by a packaging target
+that appends that filesystem after the executable segment. The final image
+will then go through the user's existing NetDIMM uploader.
+
+Do not silently fall back to
 `/pc/`, `/cd/`, network filesystems, or a host-mounted directory.
 
 ## Current status
@@ -102,10 +110,13 @@ No Naomi asset backend is selected yet. Do not silently fall back to
 - [x] Input probe Makefile rejects non-Naomi KOS environments.
 - [x] enDjinn MIE-to-controller compatibility patch prepared.
 - [x] ROM-free input probe source and Makefile added.
-- [ ] Build probe with a Naomi KOS toolchain (not yet compiled in this environment).
+- [x] Naomi ROM-board PIO read primitive and ROM-header diagnostic added.
+- [x] Host C syntax checks passed for the new PIO reader and diagnostic using minimal KOS stubs.
+- [ ] Build both probes with a real Naomi KOS toolchain (not yet compiled in this environment).
+- [ ] Verify PIO reads in Flycast and on Naomi 1 with a NetDIMM.
 - [ ] Run probe in Flycast.
 - [ ] Run probe on Naomi 1 with JVS cabinet and with a standard Maple controller.
-- [ ] Verify NetDIMM resident-image read access.
+- [ ] Implement the read-only Naomi ROMFS VFS and image packaging target.
 - [ ] Add Naomi product build and validate PVR/AICA startup.
 - [ ] Integrate fixed 57.52 Hz simulation cadence and verify on hardware.
 - [ ] Implement Naomi save/settings backend (or explicitly disable saving initially).
