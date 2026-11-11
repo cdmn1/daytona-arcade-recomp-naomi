@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [naomi]
 
+concurrency:
+  group: naomi-romfs-tools-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   romfs-tools:
     runs-on: ubuntu-latest
