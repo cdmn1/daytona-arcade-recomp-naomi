@@ -18,7 +18,7 @@ all: $(TARGET)
 rom: $(ROM)
 
 $(ROM): $(TARGET)
-	naomibintool build $@ -e $<
+	$(NAOMIBINTOOL) build $@ -e $<
 
 include $(KOS_BASE)/Makefile.rules
 
