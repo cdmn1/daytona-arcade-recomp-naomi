@@ -42,7 +42,8 @@ make -C platform/naomi/tests/input_probe rom
 ```
 
 This creates `naomi_input_probe.bin` using KOS's `naomibintool`, ready for
-the existing NetDIMM uploader.
+the existing NetDIMM uploader. If the tool has not been built yet, the
+Makefile builds it with the host compiler; Linux/WSL may need `libelf-dev`.
 
 It reports:
 - the Naomi MIE/JVS bridge and its mapped controller state;
