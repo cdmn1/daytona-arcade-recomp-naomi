@@ -34,8 +34,15 @@ make -C platform/naomi/tests/input_probe clean all
 
 The Makefile refuses to build unless the active environment explicitly has
 `KOS_SUBARCH=naomi` and `KOS_BASE` set. The output is
-`platform/naomi/tests/input_probe/naomi_input_probe.elf`. This is a Naomi ELF
-diagnostic, not the final NetDIMM `.bin` image.
+`platform/naomi/tests/input_probe/naomi_input_probe.elf`. Package it as a
+Naomi ROM image with:
+
+```sh
+make -C platform/naomi/tests/input_probe rom
+```
+
+This creates `naomi_input_probe.bin` using KOS's `naomibintool`, ready for
+the existing NetDIMM uploader.
 
 It reports:
 - the Naomi MIE/JVS bridge and its mapped controller state;
@@ -46,6 +53,21 @@ The probe is deliberately independent of game assets, enDjinn and AICAflow.
 It is a ROM-free test of KOS startup and input discovery. Its successful
 compilation does not prove Flycast or physical-cabinet operation; those need
 separate runs.
+
+## ROM-board / NetDIMM read probe
+
+Build and package the second diagnostic:
+
+```sh
+make -C platform/naomi/tests/cart_probe clean all
+make -C platform/naomi/tests/cart_probe rom
+```
+
+This produces `naomi_cart_probe.bin`. It reads the Naomi ROM header through
+the ROM-board PIO registers, reports the executable segment, and checks for
+an appended ROMFS. Since this diagnostic does not include a filesystem, a
+"No appended ROMFS" message is expected; the important first result is a
+valid Naomi header read.
 
 ## Input integration
 
@@ -75,10 +97,9 @@ server as a runtime dependency.
 
 KOS's documented `/cd` ISO9660 filesystem is Dreamcast-only. Therefore the
 Dreamcast port's `NATIVE_DISC=1` and `/cd/` path is **not** assumed to work on
-Naomi. The next storage milestone is to identify and test the actual Naomi
-NetDIMM image access interface, then provide a game asset VFS backend that
-reads the self-contained image while keeping the existing bounded scene and
-audio loaders.
+Naomi. The Naomi ROM-board PIO access path is now identified and has an initial
+reader; it still needs Flycast and hardware validation before being used by
+the game asset loader.
 
 KOS also supplies `naomibintool`, which wraps a Naomi-targeted SH-4 ELF in
 the Naomi ROM header format to produce the uploadable `.bin`. Its current
