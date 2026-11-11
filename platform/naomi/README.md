@@ -80,16 +80,29 @@ NetDIMM image access interface, then provide a game asset VFS backend that
 reads the self-contained image while keeping the existing bounded scene and
 audio loaders.
 
+KOS also supplies `naomibintool`, which wraps a Naomi-targeted SH-4 ELF in
+the Naomi ROM header format to produce the uploadable `.bin`. Its current
+implementation packs one ELF image as one load segment; it is a ROM-image
+builder, not a general-purpose asset filesystem or a way to map a large game
+archive into Naomi main RAM.
+
+The game still needs a runtime reader for the resident image on the Naomi ROM
+board / NetDIMM path (including the appropriate G1/ROM-board DMA or PIO
+mechanism). That interface must be verified against KOS and hardware/emulator
+behaviour before the game asset VFS is written. The final packaging step will
+use the KOS Naomi ROM format and then the user's existing NetDIMM uploader.
+
 No Naomi asset backend is selected yet. Do not silently fall back to
 `/pc/`, `/cd/`, network filesystems, or a host-mounted directory.
 
 ## Current status
 
 - [x] Naomi KOS target confirmed in KOS documentation/source.
-- [x] KOS MIE/JVS API and standard Maple controller API identified.
+- [x] KOS MIE/JVS API and standard Maple controller API identified and checked against current KOS headers.
+- [x] Input probe Makefile rejects non-Naomi KOS environments.
 - [x] enDjinn MIE-to-controller compatibility patch prepared.
 - [x] ROM-free input probe source and Makefile added.
-- [ ] Build probe with the user's Naomi KOS toolchain.
+- [ ] Build probe with a Naomi KOS toolchain (not yet compiled in this environment).
 - [ ] Run probe in Flycast.
 - [ ] Run probe on Naomi 1 with JVS cabinet and with a standard Maple controller.
 - [ ] Verify NetDIMM resident-image read access.
