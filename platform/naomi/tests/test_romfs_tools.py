@@ -101,7 +101,9 @@ class NaomiRomfsToolsTests(unittest.TestCase):
             size = append_romfs.append_romfs(base_path, fs_path, output_path)
             result = output_path.read_bytes()
             self.assertEqual(size, len(result))
-            self.assertEqual(result[0x1020:], fs)
+            self.assertEqual(len(result) & 1023, 0)
+            self.assertEqual(result[0x1020:0x1020 + len(fs)], fs)
+            self.assertEqual(result[0x1020 + len(fs):], bytes(len(result) - 0x1020 - len(fs)))
 
     def test_rejects_image_past_pio_address_limit(self):
         with tempfile.TemporaryDirectory() as temporary:
