@@ -15,15 +15,25 @@ $(NAOMIBINTOOL):
 	$(MAKE) -C $(KOS_BASE)/utils/naomibintool CC=cc
 
 TARGET = naomi_cart_probe.elf
+BASE_ROM = naomi_cart_probe.base.bin
+ROMFS = naomi_cart_probe.romfs
 ROM = naomi_cart_probe.bin
-OBJS = main.o ../../code/naomi_cart.o
+OBJS = main.o ../../code/naomi_cart.o ../../code/naomi_romfs.o
 
 all: $(TARGET)
 
 rom: $(ROM)
 
-$(ROM): $(TARGET)
-	$(NAOMIBINTOOL) build $@ -e $<
+.PHONY: FORCE_ROMFS
+FORCE_ROMFS:
+$(ROMFS): FORCE_ROMFS
+	python3 ../../tools/romfsgen.py $@ assets
+
+$(BASE_ROM): $(TARGET) $(NAOMIBINTOOL)
+	$(NAOMIBINTOOL) build $@ -d "CDMN" -t "Naomi NetDIMM Probe" -e $(TARGET)
+
+$(ROM): $(BASE_ROM) $(ROMFS)
+	python3 ../../tools/append_romfs.py $< $(ROMFS) $@
 
 include $(KOS_BASE)/Makefile.rules
 
@@ -31,6 +41,6 @@ $(TARGET): $(OBJS)
 	kos-cc -o $@ $(OBJS)
 
 clean:
-	-rm -f $(TARGET) $(ROM) $(OBJS)
+	-rm -f $(TARGET) $(BASE_ROM) $(ROMFS) $(ROM) $(OBJS)
 
 .PHONY: all rom clean
