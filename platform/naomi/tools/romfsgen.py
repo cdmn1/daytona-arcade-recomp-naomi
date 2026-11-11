@@ -111,6 +111,8 @@ def build_directory(
 def build_romfs(source: Path) -> bytes:
     if not source.is_dir():
         raise ValueError(f"asset root is not a directory: {source}")
+    if not any(path.is_file() and not path.is_symlink() for path in source.rglob("*")):
+        raise ValueError(f"asset root contains no regular files: {source}")
     root_entries, root_data = build_directory(source, None, None)
     header = struct.pack(
         "<6sBBII",
