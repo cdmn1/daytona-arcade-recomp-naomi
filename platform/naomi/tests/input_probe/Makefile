@@ -10,9 +10,15 @@ $(error KOS_BASE is unset. Source the Naomi KOS environ.sh first)
 endif
 
 TARGET = naomi_input_probe.elf
+ROM = naomi_input_probe.bin
 OBJS = main.o
 
 all: $(TARGET)
+
+rom: $(ROM)
+
+$(ROM): $(TARGET)
+	naomibintool build $@ -e $<
 
 include $(KOS_BASE)/Makefile.rules
 
@@ -20,6 +26,6 @@ $(TARGET): $(OBJS)
 	kos-cc -o $@ $(OBJS)
 
 clean:
-	-rm -f $(TARGET) $(OBJS)
+	-rm -f $(TARGET) $(ROM) $(OBJS)
 
-.PHONY: all clean
+.PHONY: all rom clean
