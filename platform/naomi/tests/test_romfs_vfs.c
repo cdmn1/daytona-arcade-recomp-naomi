@@ -32,7 +32,10 @@ static void put_entry(uint8_t *p, int32_t offset, uint32_t size,
     put_u32(p + 4, size);
     put_u32(p + 8, type);
     memset(p + 12, 0, 244);
-    strncpy((char *)p + 12, name, 243);
+    size_t name_length = strlen(name);
+    if (name_length > 243u)
+        name_length = 243u;
+    memcpy(p + 12, name, name_length);
 }
 
 int naomi_cart_read(void *destination, uint32_t source_offset, size_t length) {
