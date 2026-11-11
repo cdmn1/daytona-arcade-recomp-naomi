@@ -3,6 +3,7 @@
  * This reads the Naomi ROM header without copying the game image into RAM.
  */
 #include <stdio.h>
+#include <errno.h>
 #include <stdint.h>
 #include <string.h>
 #include <kos.h>
