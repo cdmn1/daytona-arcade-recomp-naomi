@@ -1,6 +1,6 @@
 /*
- * ROM-board / NetDIMM PIO diagnostic.
- * This reads the Naomi ROM header without copying the game image into RAM.
+ * ROM-board / NetDIMM PIO and ROMFS diagnostic.
+ * The test payload remains in the resident image and is read on demand.
  */
 #include <stdio.h>
 #include <errno.h>
@@ -10,13 +10,13 @@
 #include <kos/init.h>
 
 #include "naomi_cart.h"
+#include "naomi_romfs.h"
 
 KOS_INIT_FLAGS(INIT_DEFAULT);
 
 #define NAOMI_HEADER_SIZE 0x500u
 #define NAOMI_MAIN_SEGMENTS_OFFSET 0x360u
 #define NAOMI_ENTRY_OFFSET 0x420u
-#define NAOMI_ROM_DATA_OFFSET 0x1000u
 
 static uint32_t read_u32(const uint8_t *p) {
     uint32_t value;
@@ -27,7 +27,7 @@ static uint32_t read_u32(const uint8_t *p) {
 int main(void) {
     static uint32_t header_words[NAOMI_HEADER_SIZE / sizeof(uint32_t)];
     uint8_t *header = (uint8_t *)header_words;
-    uint8_t fs_header[16] __attribute__((aligned(4)));
+    char payload[80];
 
     puts("Daytona Naomi ROM-board / NetDIMM probe");
 #if defined(_arch_sub_naomi)
@@ -67,21 +67,32 @@ int main(void) {
            (unsigned long)rom_offset, (unsigned long)load_address,
            (unsigned long)segment_size);
 
-    uint32_t fs_offset = (rom_offset + segment_size + 3u) & ~3u;
-    if (naomi_cart_read(fs_header, fs_offset, sizeof(fs_header)) != 0) {
-        printf("ROMFS probe outside PIO range or read failed (errno=%d)\n", errno);
+    if (naomi_romfs_init_default() != 0) {
+        printf("ERROR: could not mount appended ROMFS (errno=%d)\n", errno);
+        for (;;) thd_sleep(1000);
     }
-    else if (memcmp(fs_header, "ROMFS\0", 6) == 0) {
-        printf("ROMFS found at %08lx (version %u.%u)\n",
-               (unsigned long)fs_offset, (unsigned)fs_header[6],
-               (unsigned)fs_header[7]);
-    }
-    else {
-        printf("No appended ROMFS at %08lx (magic %.6s)\n",
-               (unsigned long)fs_offset, fs_header);
+    puts("ROMFS mounted at /naomi");
+
+    FILE *file = fopen("/naomi/probe.txt", "rb");
+    if (!file) {
+        printf("ERROR: could not open /naomi/probe.txt (errno=%d)\n", errno);
+        for (;;) thd_sleep(1000);
     }
 
-    puts("PIO probe complete; no bulk image data was copied into Naomi RAM.");
+    if (!fgets(payload, sizeof(payload), file)) {
+        printf("ERROR: could not read ROMFS test file (errno=%d)\n", errno);
+        fclose(file);
+        for (;;) thd_sleep(1000);
+    }
+    fclose(file);
+
+    if (strcmp(payload, "Daytona Naomi NetDIMM ROMFS probe OK\n") != 0) {
+        printf("ERROR: unexpected ROMFS payload: %s\n", payload);
+        for (;;) thd_sleep(1000);
+    }
+
+    printf("ROMFS payload verified: %s", payload);
+    puts("PIO + ROMFS probe complete; bulk game assets remain in NetDIMM RAM.");
     for (;;) thd_sleep(1000);
     return 0;
 }
