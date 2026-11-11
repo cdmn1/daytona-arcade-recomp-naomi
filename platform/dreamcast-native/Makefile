@@ -22,7 +22,7 @@ NAOMI_ROMFS := $(ENJ_BINDIR)/$(ENJ_BASENAME).romfs
 NAOMI_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi.bin
 
 $(NAOMIBINTOOL):
-	$(MAKE) -C $(KOS_BASE)/utils/naomibintool
+	$(MAKE) -C $(KOS_BASE)/utils/naomibintool CC=cc
 
 .PHONY: FORCE_NAOMI_ROMFS naomi-bin
 FORCE_NAOMI_ROMFS:
