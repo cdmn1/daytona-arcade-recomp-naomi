@@ -11,6 +11,9 @@ endif
 CFLAGS += -I../../include
 NAOMIBINTOOL ?= $(KOS_BASE)/utils/naomibintool/naomibintool
 
+$(NAOMIBINTOOL):
+	$(MAKE) -C $(KOS_BASE)/utils/naomibintool CC=cc
+
 TARGET = naomi_cart_probe.elf
 ROM = naomi_cart_probe.bin
 OBJS = main.o ../../code/naomi_cart.o
