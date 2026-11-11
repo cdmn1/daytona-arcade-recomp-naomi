@@ -7,6 +7,39 @@ endif
 .DEFAULT_GOAL := all
 include $(ENDJINN_ROOT)/base_link.mk
 
+ifeq ($(KOS_SUBARCH),naomi)
+# Naomi-only ROM-board/NetDIMM support. These objects are kept out of the
+# Dreamcast build and linked into the native game only for KOS_SUBARCH=naomi.
+-include $(ENJ_BUILDDIR)/naomi/naomi_cart.d $(ENJ_BUILDDIR)/naomi/naomi_romfs.d
+
+$(ENJ_BUILDDIR)/naomi/%.o: ../naomi/code/%.c $(ENJ_MAKEFILE)
+	@mkdir -p $(dir $@)
+	$(ENJ_CC) $(ENJ_INCLUDES) $(ENJ_CFLAGS) $(DEFINES) $(ENJ_DEPFLAGS) -c $< -o $@
+
+NAOMIBINTOOL := $(KOS_BASE)/utils/naomibintool/naomibintool
+NAOMI_BASE_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-base.bin
+NAOMI_ROMFS := $(ENJ_BINDIR)/$(ENJ_BASENAME).romfs
+NAOMI_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).bin
+
+$(NAOMIBINTOOL):
+	$(MAKE) -C $(KOS_BASE)/utils/naomibintool
+
+.PHONY: FORCE_NAOMI_ROMFS naomi-bin
+FORCE_NAOMI_ROMFS:
+$(NAOMI_ROMFS): FORCE_NAOMI_ROMFS
+	@mkdir -p $(dir $@)
+	python3 ../naomi/tools/romfsgen.py $@ $(ROMBASEPATH)
+
+$(NAOMI_BASE_BIN): $(ENJ_BINDIR)/$(ENJ_BASENAME).elf $(NAOMIBINTOOL)
+	@mkdir -p $(dir $@)
+	$(NAOMIBINTOOL) build $@ -d "CDMN" -t "Daytona USA Recompiled" -e $<
+
+$(NAOMI_BIN): $(NAOMI_BASE_BIN) $(NAOMI_ROMFS)
+	python3 ../naomi/tools/append_romfs.py $< $(NAOMI_ROMFS) $@
+
+naomi-bin: $(NAOMI_BIN)
+endif
+
 $(OBJS): Makefile local.cfg.mk
 # Presentation only: global fast-math aborts the live race at tick 563.
 # Preserve finite-input guards at asset/geometry boundaries.
