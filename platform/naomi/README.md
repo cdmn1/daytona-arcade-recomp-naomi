@@ -145,8 +145,7 @@ Do not silently fall back to
 - [x] Read-only ROMFS VFS source added and mounted at `/naomi/` in Naomi builds.
 - [x] ROMFS generator, Naomi image appender, and host-side format tests added.
 - [x] Naomi product build target added (`make naomi-bin`).
-- [x] Host C syntax checks passed for the PIO reader and cart diagnostic using minimal KOS stubs; the VFS has not yet been compiled.
-- [ ] Run ROMFS tooling tests in GitHub Actions.
+- [ ] Run ROMFS tooling tests and host C syntax checks in GitHub Actions (workflow added; run still queued).
 - [ ] Build both probes and the full game with a real Naomi KOS toolchain (not yet compiled in this environment).
 - [ ] Verify PIO reads in Flycast and on Naomi 1 with a NetDIMM.
 - [ ] Run probe in Flycast.
