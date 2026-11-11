@@ -1,0 +1,22 @@
+name: Naomi ROMFS tooling
+
+on:
+  push:
+    branches: [naomi]
+  pull_request:
+    branches: [naomi]
+
+jobs:
+  romfs-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check Python syntax
+        run: |
+          python3 -m py_compile platform/naomi/tools/romfsgen.py
+          python3 -m py_compile platform/naomi/tools/append_romfs.py
+      - name: Test ROMFS layout and image packaging
+        run: python3 -m unittest discover -s platform/naomi/tests -p 'test_*.py'
