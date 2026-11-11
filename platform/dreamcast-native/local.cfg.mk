@@ -1,6 +1,7 @@
 ENJ_BASENAME := daytona-native
 ENJ_CFLAGS += -I$(abspath include)
 ifeq ($(KOS_SUBARCH),naomi)
+ENJ_CBASEPATH := /naomi/
 ENJ_CFLAGS += -I$(abspath ../naomi/include)
 OBJS += $(ENJ_BUILDDIR)/naomi/naomi_cart.o $(ENJ_BUILDDIR)/naomi/naomi_romfs.o
 endif
