@@ -9,6 +9,11 @@ ifeq ($(KOS_BASE),)
 $(error KOS_BASE is unset. Source the Naomi KOS environ.sh first)
 endif
 
+NAOMIBINTOOL ?= $(KOS_BASE)/utils/naomibintool/naomibintool
+
+$(NAOMIBINTOOL):
+	$(MAKE) -C $(KOS_BASE)/utils/naomibintool CC=cc
+
 TARGET = naomi_input_probe.elf
 ROM = naomi_input_probe.bin
 OBJS = main.o
