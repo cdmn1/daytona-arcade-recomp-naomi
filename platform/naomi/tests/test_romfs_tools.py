@@ -64,6 +64,13 @@ class NaomiRomfsToolsTests(unittest.TestCase):
                 payload,
             )
 
+    def test_rejects_empty_asset_tree(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "empty"
+            root.mkdir()
+            with self.assertRaisesRegex(ValueError, "no regular files"):
+                romfsgen.build_romfs(root)
+
     def test_output_is_deterministic(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "assets"
