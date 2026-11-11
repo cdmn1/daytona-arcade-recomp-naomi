@@ -12,6 +12,10 @@ cc -std=gnu11 -Wall -Wextra -Wformat=2 -Werror \
 
 cc -std=gnu11 -Wall -Wextra -Wformat=2 -Werror -D_arch_sub_naomi \
   -I"$STUBS" -I"$INCLUDES" -fsyntax-only \
+  "$ROOT/platform/naomi/tests/input_probe/main.c"
+
+cc -std=gnu11 -Wall -Wextra -Wformat=2 -Werror -D_arch_sub_naomi \
+  -I"$STUBS" -I"$INCLUDES" -fsyntax-only \
   "$ROOT/platform/naomi/tests/cart_probe/main.c"
 
 cc -std=gnu11 -Wall -Wextra -Wformat=2 -Werror \
