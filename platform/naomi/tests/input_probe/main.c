@@ -46,12 +46,18 @@ int main(void) {
                    (unsigned)mie->jvs.wheel, (unsigned)mie->jvs.accel,
                    (unsigned)mie->jvs.brake);
             printf("  p1=%04x p2=%04x panel=%02x/%02x\n",
-                   mie->jvs.p1.raw, mie->jvs.p2.raw,
-                   mie->jvs.panel.dip.raw, mie->jvs.panel.psw.raw);
+                   (unsigned)mie->jvs.p1.raw, (unsigned)mie->jvs.p2.raw,
+                   (unsigned)mie->jvs.panel.dip.raw,
+                   (unsigned)mie->jvs.panel.psw.raw);
             printf("  coins=%u,%u raw=%04x,%04x\n",
                    (unsigned)mie->jvs.coin[0].count,
                    (unsigned)mie->jvs.coin[1].count,
-                   mie->jvs.coin[0].raw, mie->jvs.coin[1].raw);
+                   (unsigned)mie->jvs.coin[0].raw,
+                   (unsigned)mie->jvs.coin[1].raw);
+            printf("  coin pulse=%02x fault=%02x system=%02x\n",
+                   (unsigned)mie->jvs.coin_pulse,
+                   (unsigned)mie->jvs.coin_fault,
+                   (unsigned)mie->jvs.system.raw);
         }
 #else
         puts("MIE/JVS details require the Naomi KOS sub-architecture");
