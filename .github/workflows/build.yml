@@ -5,6 +5,16 @@ name: Build
 on:
   push:
     branches: ['**']
+    # Naomi integration has its own focused checks; this matrix does not build
+    # the game or the KOS target and need not run for those source-only changes.
+    paths-ignore:
+      - 'platform/naomi/**'
+      - 'platform/dreamcast-native/Makefile'
+      - 'platform/dreamcast-native/code/main.c'
+      - 'platform/dreamcast-native/local.cfg.mk'
+      - 'platform/dreamcast-native/scripts/fetch_endjinn.sh'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/naomi-romfs-tools.yml'
   pull_request:
   workflow_dispatch:
 permissions:
