@@ -105,6 +105,27 @@ class NaomiRomfsToolsTests(unittest.TestCase):
             self.assertEqual(result[0x1020:0x1020 + len(fs)], fs)
             self.assertEqual(result[0x1020 + len(fs):], bytes(len(result) - 0x1020 - len(fs)))
 
+    def test_rejects_truncated_executable_segment(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            base_path = folder / "base.bin"
+            fs_path = folder / "assets.romfs"
+            output_path = folder / "final.bin"
+
+            base = bytearray(0x500)
+            base[:16] = b"NAOMI           "
+            struct.pack_into("<III", base, 0x360, 0x1000, 0x8C020000, 0x20)
+            struct.pack_into("<I", base, 0x36C, 0xFFFFFFFF)
+            base_path.write_bytes(base)
+
+            source = folder / "assets"
+            source.mkdir()
+            (source / "file.bin").write_bytes(b"x")
+            fs_path.write_bytes(romfsgen.build_romfs(source))
+
+            with self.assertRaisesRegex(ValueError, "truncated"):
+                append_romfs.append_romfs(base_path, fs_path, output_path)
+
     def test_rejects_image_past_pio_address_limit(self):
         with tempfile.TemporaryDirectory() as temporary:
             folder = Path(temporary)
