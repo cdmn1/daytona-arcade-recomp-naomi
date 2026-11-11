@@ -49,8 +49,8 @@ int main(void) {
     }
 
     printf("ROM signature: %.16s\n", header);
-    printf("Publisher: %.32s\n", header + 0x10);
-    printf("Title: %.32s\n", header + 0x50);
+    printf("Developer: %.32s\n", header + 0x10);
+    printf("Title: %.32s\n", header + 0x30);
     printf("Entry point: %08lx\n",
            (unsigned long)read_u32(header + NAOMI_ENTRY_OFFSET));
 
