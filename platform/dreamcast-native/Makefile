@@ -19,14 +19,14 @@ $(ENJ_BUILDDIR)/naomi/%.o: ../naomi/code/%.c $(ENJ_MAKEFILE)
 NAOMIBINTOOL := $(KOS_BASE)/utils/naomibintool/naomibintool
 NAOMI_BASE_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-base.bin
 NAOMI_ROMFS := $(ENJ_BINDIR)/$(ENJ_BASENAME).romfs
-NAOMI_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).bin
+NAOMI_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi.bin
 
 $(NAOMIBINTOOL):
 	$(MAKE) -C $(KOS_BASE)/utils/naomibintool
 
 .PHONY: FORCE_NAOMI_ROMFS naomi-bin
 FORCE_NAOMI_ROMFS:
-$(NAOMI_ROMFS): FORCE_NAOMI_ROMFS
+$(NAOMI_ROMFS): FORCE_NAOMI_ROMFS $(ENJ_ASSETS) | $(ROMBASEPATH)
 	@mkdir -p $(dir $@)
 	python3 ../naomi/tools/romfsgen.py $@ $(ROMBASEPATH)
 
