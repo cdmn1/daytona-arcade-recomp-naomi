@@ -15,6 +15,7 @@ on:
       - 'platform/dreamcast-native/scripts/fetch_endjinn.sh'
       - '.github/workflows/build.yml'
       - '.github/workflows/naomi-romfs-tools.yml'
+      - '.github/workflows/naomi-probes.yml'
   pull_request:
   workflow_dispatch:
 permissions:
