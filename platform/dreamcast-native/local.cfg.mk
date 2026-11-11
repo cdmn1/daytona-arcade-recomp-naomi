@@ -1,6 +1,13 @@
 ENJ_BASENAME := daytona-native
 ENJ_CFLAGS += -I$(abspath include)
 ifeq ($(KOS_SUBARCH),naomi)
+ifdef NATIVE_DISC
+$(error Naomi uses the resident NetDIMM ROMFS; do not set NATIVE_DISC)
+endif
+NATIVE_ASSET_ROOT ?= /naomi/
+ifneq ($(NATIVE_ASSET_ROOT),/naomi/)
+$(error Naomi assets must be read from the resident /naomi/ ROMFS)
+endif
 ENJ_CBASEPATH := /naomi/
 ENJ_CFLAGS += -I$(abspath ../naomi/include)
 OBJS += $(ENJ_BUILDDIR)/naomi/naomi_cart.o $(ENJ_BUILDDIR)/naomi/naomi_romfs.o
