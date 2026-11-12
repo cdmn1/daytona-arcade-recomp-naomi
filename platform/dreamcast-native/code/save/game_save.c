@@ -1,4 +1,4 @@
-/* What the game keeps between games, and the VMU (include/game_save.h). */
+/* What the game keeps between games: the VMU on Dreamcast; Naomi's original settings EEPROM here. */
 #include "game_save.h"
 #include <stdio.h>
 #include <string.h>
