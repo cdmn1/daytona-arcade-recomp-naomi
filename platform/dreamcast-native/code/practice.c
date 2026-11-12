@@ -944,8 +944,13 @@ static void practice_update(void *unused) {
         }
         /* P1 D/4 is the observed session-reset input. It is independent of B/2, which is the digital brake.
          * The operator can disable reset in Game Test; START+B remains the inspector chord. */
+#if defined(_arch_sub_naomi)
+        const int reset_pressed=native_mie && (native_mie->jvs.p1.raw&MIE_JVS_SW10_BIT);
+#else
+        const int reset_pressed=c->button.B==ENJ_BUTTON_DOWN_THIS_FRAME;
+#endif
         if (!practice.attract_active && nm_game_settings()->reset_with_p1_d==NM_RESET_BUTTON_ON &&
-            c->button.D == ENJ_BUTTON_DOWN_THIS_FRAME && !(c->button.START&1)) {
+            reset_pressed && !(c->button.START&1)) {
             practice.failed = !practice_reset_session(NULL);
             if(!practice.failed) practice.failed=!practice_race_detail();
         }
