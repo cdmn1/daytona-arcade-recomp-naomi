@@ -6,6 +6,10 @@ ifeq ($(KOS_SUBARCH),naomi)
 # not include INIT_MIE, so explicitly enable it for the full game as the
 # standalone input probe does.
 ENJ_CFLAGS += -DENJ_KOS_INIT_FLAGS='(INIT_DEFAULT | INIT_MIE)'
+# KallistiOS identifies this target with _arch_dreamcast/__NAOMI__, while the
+# native renderer uses the project's __DREAMCAST__ feature guard. Keep the
+# console-only SH-4 paths (XMTRX transforms, live specular and SQ streams) on.
+ENJ_CFLAGS += -D__DREAMCAST__=1
 ifdef NATIVE_DISC
 $(error Naomi uses the resident NetDIMM ROMFS; do not set NATIVE_DISC)
 endif
