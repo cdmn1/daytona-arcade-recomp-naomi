@@ -6,7 +6,6 @@ on:
     paths:
       - 'platform/naomi/code/**'
       - 'platform/naomi/include/**'
-      - 'platform/naomi/tests/cart_probe/**'
       - 'platform/naomi/tests/input_probe/**'
       - 'platform/naomi/tools/**'
       - 'platform/dreamcast-native/Makefile'
@@ -96,7 +95,6 @@ jobs:
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
           make -C "$KOS_BASE" -j2
-          make -C "$GITHUB_WORKSPACE/platform/naomi/tests/cart_probe" clean rom
           make -C "$GITHUB_WORKSPACE/platform/naomi/tests/input_probe" clean rom
 
       - name: Upload Naomi probe binaries
@@ -105,5 +103,4 @@ jobs:
           name: naomi-netdimm-probes
           if-no-files-found: error
           path: |
-            platform/naomi/tests/cart_probe/naomi_cart_probe_v1.bin
-            platform/naomi/tests/input_probe/naomi_input_probe_v2.bin
+            platform/naomi/tests/input_probe/naomi_input_probe_v3.bin
