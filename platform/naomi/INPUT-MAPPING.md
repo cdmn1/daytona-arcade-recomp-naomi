@@ -17,6 +17,12 @@ separately and, when no ordinary controller occupies that port, passes
 button edge tracking and controller-state consumers. Standard Maple
 controllers remain supported.
 
+The full game's KOS init flags are owned by enDjinn's `enj_state.c`, not
+Daytona's `main.c`. The Naomi build therefore overrides
+`ENJ_KOS_INIT_FLAGS` in `local.cfg.mk` with
+`INIT_DEFAULT | INIT_MIE`, ensuring the MIE driver is initialized before
+enDjinn scans its controller slots.
+
 ## Daytona's existing normalized input path
 
 The race loop in `platform/dreamcast-native/code/practice.c` already consumes
