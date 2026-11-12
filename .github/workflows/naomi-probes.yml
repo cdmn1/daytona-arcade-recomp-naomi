@@ -117,7 +117,27 @@ jobs:
           p.write_text(s)
           PY
           make -C "$KOS_BASE" -j2
-          make -C "$GITHUB_WORKSPACE/platform/naomi/tests/input_probe" clean rom
+
+      - name: Check patched enDjinn Naomi input integration
+        env:
+          KOS_BASE: ${{ github.workspace }}/KallistiOS
+        run: |
+          sh platform/dreamcast-native/scripts/fetch_endjinn.sh
+          export KOS_SUBARCH=naomi
+          . "$KOS_BASE/environ.sh"
+          kos-cc -I"$GITHUB_WORKSPACE/extern/endjinn/include" \
+            -D_arch_sub_naomi \
+            -DENJ_KOS_INIT_FLAGS='(INIT_DEFAULT | INIT_MIE)' \
+            -fsyntax-only "$GITHUB_WORKSPACE/extern/endjinn/code/enj_ctrl.c" \
+            "$GITHUB_WORKSPACE/extern/endjinn/code/enj_state.c"
+
+      - name: Build Naomi input probe
+        env:
+          KOS_BASE: ${{ github.workspace }}/KallistiOS
+        run: |
+          export KOS_SUBARCH=naomi
+          . "$KOS_BASE/environ.sh"
+          make -C platform/naomi/tests/input_probe clean rom
 
       - name: Upload Naomi probe binaries
         uses: actions/upload-artifact@v4
