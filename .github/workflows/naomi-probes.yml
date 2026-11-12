@@ -94,28 +94,26 @@ jobs:
           EOF
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
-          # KOS normally disables MIE on retail Dreamcasts. Naomi hardware
-          # can report the retail system-mode value in Flycast, so allow the
-          # MIE driver on Naomi builds only.
+          # This CI build targets Naomi only. Remove KOS's Retail-Dreamcast
+          # guards from the two MIE initialization entry points so Naomi can
+          # initialize MIE even when Flycast reports HW_TYPE_RETAIL.
           python3 - <<'PY'
           from pathlib import Path
           import os
           p = Path(os.environ["KOS_BASE"]) / "kernel/arch/dreamcast/hardware/maple/mie/mie.c"
           s = p.read_text()
-          old = "if(hardware_sys_mode(NULL) == HW_TYPE_RETAIL) {"
-          functions = (
-              ("bool mie_init_fw(", "void mie_init(void)"),
-              ("void mie_init(void)", "void mie_shutdown(void)"),
+          replacements = (
+              ("bool mie_init_fw(const char *fw_path) {", "    if(hardware_sys_mode(NULL) == HW_TYPE_RETAIL) {\n        return false;\n    }\n\n"),
+              ("void mie_init(void) {", "    if(hardware_sys_mode(NULL) == HW_TYPE_RETAIL) {\n        return;\n    }\n\n"),
           )
-          for function, next_function in functions:
+          for function, guard in replacements:
               start = s.find(function)
-              end = s.find(next_function, start + len(function))
-              if start < 0 or end < 0:
-                  raise SystemExit(f"Could not delimit {function}")
-              body = s[start:end]
-              if body.count(old) != 1:
-                  raise SystemExit(f"Expected one retail guard in {function}")
-              s = s[:start] + body.replace(old, "#if !defined(_arch_sub_naomi)\n    " + old + "\n#endif") + s[end:]
+              if start < 0:
+                  raise SystemExit(f"Could not find {function}")
+              guard_at = s.find(guard, start + len(function))
+              if guard_at < 0:
+                  raise SystemExit(f"Could not find Retail guard in {function}")
+              s = s[:guard_at] + s[guard_at + len(guard):]
           p.write_text(s)
           PY
           make -C "$KOS_BASE" -j2
