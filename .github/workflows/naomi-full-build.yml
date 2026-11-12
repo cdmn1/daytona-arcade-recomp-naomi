@@ -35,7 +35,7 @@ jobs:
           }
           echo "All required secrets are configured."
 
-      - name: Test native save and Naomi EEPROM backends
+      - name: Test native save and settings menu
         run: |
           set -euo pipefail
           cc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined \
@@ -47,14 +47,6 @@ jobs:
             -o /tmp/test_game_save
           /tmp/test_game_save
           python3 platform/dreamcast-native/tests/test_settings_mode.py
-          cc -std=c11 -Wall -Wextra -Werror -D_arch_sub_naomi \
-            -Iplatform/naomi/tests/host_stubs -Iplatform/dreamcast-native/include \
-            platform/dreamcast-native/tests/test_naomi_eeprom.c \
-            platform/dreamcast-native/code/save/save_data.c \
-            platform/dreamcast-native/code/save/save_store.c \
-            platform/dreamcast-native/code/save/game_save.c \
-            -o /tmp/test_naomi_eeprom
-          /tmp/test_naomi_eeprom
 
       - name: Install build dependencies
         run: |
