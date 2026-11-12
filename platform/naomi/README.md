@@ -136,22 +136,28 @@ Do not silently fall back to
 
 ## Current status
 
-- [x] Naomi KOS target confirmed in KOS documentation/source.
-- [x] KOS MIE/JVS API and standard Maple controller API identified and checked against current KOS headers.
-- [x] Input probe Makefile rejects non-Naomi KOS environments.
-- [x] enDjinn MIE-to-controller compatibility patch prepared.
-- [x] ROM-free input probe source and Makefile added.
-- [x] Naomi ROM-board PIO read primitive and ROM-header diagnostic added.
-- [x] Read-only ROMFS VFS source added and mounted at `/naomi/` in Naomi builds.
-- [x] ROMFS generator, Naomi image appender, and host-side format tests added.
-- [x] Naomi product build target added (`make naomi-bin`).
-- [ ] Run ROMFS tooling tests and host C syntax checks in GitHub Actions (workflow added; run still queued).
-- [ ] Build both probes and the full game with a real Naomi KOS toolchain (not yet compiled in this environment).
-- [ ] Verify PIO reads in Flycast and on Naomi 1 with a NetDIMM.
-- [ ] Run probe in Flycast.
-- [ ] Run probe on Naomi 1 with JVS cabinet and with a standard Maple controller.
-- [ ] Add Naomi product build and validate PVR/AICA startup.
-- [ ] Integrate fixed 57.52 Hz simulation cadence and verify on hardware.
-- [ ] Implement Naomi save/settings backend (or explicitly disable saving initially).
+- [x] Naomi KOS target and MIE/JVS API identified.
+- [x] Naomi input probe compiled and ran in Flycast.
+- [x] v5 probe detected the `MIE JVS Bridge`, read its mapped controller
+  state and native JVS values; button input response was confirmed.
+- [x] enDjinn MIE-to-controller patch prepared and applied by the pinned
+  dependency-fetch script.
+- [x] Daytona's existing race loop already consumes the normalized
+  `joyx`, `rtrigger`, `ltrigger` and button fields populated by KOS's MIE
+  mapper; see `INPUT-MAPPING.md`.
+- [x] Naomi ROM-board PIO reader, read-only ROMFS VFS, ROMFS generator and
+  image appender are implemented.
+- [ ] Compile the patched enDjinn and complete Daytona game with the Naomi
+  KOS toolchain.
+- [ ] Produce the full `.naomi.bin` with the actual generated title/race
+  assets and ROMFS, then verify it boots in Flycast.
+- [ ] Verify full-game steering, accelerator, brake and buttons in Flycast.
+- [ ] Verify PIO/ROMFS and the full game on a physical Naomi 1/NetDIMM.
+- [ ] Finalize fixed 57.52 Hz simulation cadence and Naomi save/settings
+  behavior.
 
-No Naomi ELF, BIN, DAT or NetDIMM upload has been produced by this commit.
+The input probe is a standalone diagnostic, not the full game. The full
+product build still depends on the Naomi KOS toolchain and generated asset
+directories configured in `platform/dreamcast-native/local.cfg.mk`; those
+build products are not present in this GitHub repository. No full Naomi game
+ELF or NetDIMM image has been produced yet.
