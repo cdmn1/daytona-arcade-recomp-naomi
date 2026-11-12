@@ -142,6 +142,10 @@ Do not silently fall back to
   state and native JVS values; button input response was confirmed.
 - [x] enDjinn MIE-to-controller patch prepared and applied by the pinned
   dependency-fetch script.
+- [x] Full Naomi game build explicitly enables KOS `INIT_MIE` through
+  enDjinn's `ENJ_KOS_INIT_FLAGS`.
+- [x] Naomi ROMFS packaging uses the complete generated asset root, not
+  enDjinn's default per-game subdirectory.
 - [x] Daytona's existing race loop already consumes the normalized
   `joyx`, `rtrigger`, `ltrigger` and button fields populated by KOS's MIE
   mapper; see `INPUT-MAPPING.md`.
