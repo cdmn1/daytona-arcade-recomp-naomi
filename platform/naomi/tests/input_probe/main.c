@@ -37,12 +37,23 @@ int main(void) {
 
     for(;;) {
         int found_mie = 0;
-        int sys_type, region;
+        int sys_type, region = 0;
         int i;
         maple_device_t *dev;
+        volatile uint32_t *sys_dma = (volatile uint32_t *)0xFFA00000;
 
+        sys_type = hardware_sys_mode(&region);
         clear_screen();
         puts("Daytona Naomi input probe");
+        printf("Hardware: %s (0x%x), region 0x%x\n",
+               sys_type == HW_TYPE_NAOMI ? "Naomi" :
+               sys_type == HW_TYPE_RETAIL ? "Retail" :
+               sys_type == HW_TYPE_SET5 ? "Set5" : "unknown",
+               sys_type, region);
+        printf("System DMA regs: %08lx %08lx %08lx\n",
+               (unsigned long)sys_dma[0x20 / 4],
+               (unsigned long)sys_dma[0x2C / 4],
+               (unsigned long)sys_dma[0x40 / 4]);
 #if defined(_arch_sub_naomi)
         printf("Port A mode: %s\n",
                mie_port0_mode() == MIE_PORT0_JVS ? "JVS" :
