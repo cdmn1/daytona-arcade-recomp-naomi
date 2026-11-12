@@ -15,6 +15,9 @@ static struct {
 } screen;
 
 static const char *card_line(void) {
+#if defined(_arch_sub_naomi)
+    return "NAOMI: RUNTIME ONLY (EEPROM/SRAM SAVE PENDING)";
+#else
     const nm_game_save_status_t s=nm_game_save_status();
     if(s.busy) return "VMU: SAVING...";
     if(s.last!=NM_SAVE_NO_FILE)
@@ -24,6 +27,7 @@ static const char *card_line(void) {
            s.boot==NM_SAVE_NO_FILE ? "VMU: NO SAVE YET (5 BLOCKS)" :
            s.boot==NM_SAVE_DAMAGED ? "VMU: SAVE DAMAGED, DEFAULTS IN USE" :
            s.boot==NM_SAVE_NO_CARD ? "VMU: NONE" : "VMU: ERROR";
+#endif
 }
 
 static void line(unsigned item,const char *name,const char *value,int y) {
@@ -47,7 +51,13 @@ static void render(void *unused) {
     enj_qfont_color_set(160,160,160);
     enj_qfont_write(card_line(),96,330,PVR_LIST_PT_POLY);
     enj_qfont_write("UP/DOWN SELECT  LEFT/RIGHT CHANGE",96,380,PVR_LIST_PT_POLY);
-    enj_qfont_write("START SAVE AND EXIT  B CANCEL",96,404,PVR_LIST_PT_POLY);
+    enj_qfont_write(
+#if defined(_arch_sub_naomi)
+        "START APPLY AND EXIT  B CANCEL",
+#else
+        "START SAVE AND EXIT  B CANCEL",
+#endif
+        96,404,PVR_LIST_PT_POLY);
     enj_qfont_color_set(255,255,255);
 }
 
@@ -91,10 +101,17 @@ static void update(void *unused) {
                 screen.settings.reset_with_p1_d!=nm_game_settings()->reset_with_p1_d || screen.clear==2;
             nm_game_settings_set(&screen.settings);
             if(screen.clear==2) nm_game_records_clear();
+            #if !defined(_arch_sub_naomi)
             if(changed) nm_game_save_request();
+#endif
             printf("Native settings: difficulty %s, advertise sound %s%s%s\n",
                 nm_settings_difficulty_name(screen.settings.difficulty),nm_settings_advertise_name(screen.settings.advertise_sound),
-                screen.clear==2 ? ", records cleared" : "",changed ? ", saving" : ", unchanged");
+                screen.clear==2 ? ", records cleared" : "",changed ?
+#if defined(_arch_sub_naomi)
+                ", runtime only (not persistent)" : ", unchanged");
+#else
+                ", saving" : ", unchanged");
+#endif
         }
         if(!nm_title_mode_start()) enj_state_flag_shutdown(NULL);
         return;
