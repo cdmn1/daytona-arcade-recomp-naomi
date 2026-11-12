@@ -235,7 +235,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build/naomi-assets
-          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', 'platform/naomi/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
+          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
 
       - name: Pre-flight Naomi build checks
         env:
@@ -288,7 +288,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: build/naomi-assets
-          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', 'platform/naomi/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
+          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
 
       - name: Compile Naomi game and append resident ROMFS
         env:
