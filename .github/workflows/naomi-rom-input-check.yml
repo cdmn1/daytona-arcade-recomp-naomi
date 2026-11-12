@@ -1,0 +1,61 @@
+name: Naomi ROM input check
+
+on:
+  workflow_dispatch:
+    inputs:
+      daytona_rom_url:
+        description: "Dropbox direct-download URL for daytona93.zip (use dl=1)"
+        required: true
+        type: string
+      music_zip_url:
+        description: "Optional direct-download URL for the Daytona USA VGMrips music ZIP (use dl=1)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Daytona ROM archive
+        env:
+          ROM_URL: ${{ inputs.daytona_rom_url }}
+        run: |
+          set -euo pipefail
+          mkdir -p input
+          curl --fail --location --retry 3 --retry-all-errors \
+            --connect-timeout 30 --max-time 600 \
+            --output input/daytona93.zip "$ROM_URL"
+          test -s input/daytona93.zip
+          unzip -tq input/daytona93.zip
+          echo "ROM archive downloaded and ZIP integrity verified."
+          echo "Archive size: $(stat -c '%s bytes' input/daytona93.zip)"
+          echo "Archive entries:"
+          unzip -Z1 input/daytona93.zip | sed -n '1,80p'
+          echo "Checking for expected Daytona ROM files..."
+          unzip -Z1 input/daytona93.zip | grep -Eiq '(^|/)(epr-|mpr-).*\.(bin|ic[0-9]+|rom)$' || {
+            echo "::error::No expected epr-/mpr- ROM entries found in daytona93.zip"
+            exit 1
+          }
+
+      - name: Download and validate optional music archive
+        if: ${{ inputs.music_zip_url != '' }}
+        env:
+          MUSIC_URL: ${{ inputs.music_zip_url }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --retry-all-errors \
+            --connect-timeout 30 --max-time 600 \
+            --output input/daytona-music.zip "$MUSIC_URL"
+          test -s input/daytona-music.zip
+          unzip -tq input/daytona-music.zip
+          echo "Music archive downloaded and ZIP integrity verified."
+          echo "Archive size: $(stat -c '%s bytes' input/daytona-music.zip)"
+          unzip -Z1 input/daytona-music.zip | sed -n '1,80p'
+
+      - name: Confirm private input handling
+        run: |
+          echo "Archives were downloaded only onto this ephemeral runner."
+          echo "No ROM or music archive is committed or uploaded as a workflow artifact."
