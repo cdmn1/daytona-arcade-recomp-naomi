@@ -41,7 +41,7 @@ static void render(void *unused) {
     line(ITEM_DIFFICULTY,"DIFFICULTY",nm_settings_difficulty_name(screen.settings.difficulty),140);
     line(ITEM_ADVERTISE,"ADVERTISE SOUND",nm_settings_advertise_name(screen.settings.advertise_sound),170);
     line(ITEM_CONTROL,"CONTROL SCHEME",nm_settings_control_name(screen.settings.control_scheme),200);
-    line(ITEM_RESET,"RESET WITH P1 B/2",nm_settings_reset_name(screen.settings.reset_with_p1_b),230);
+    line(ITEM_RESET,"RESET WITH P1 D/4",nm_settings_reset_name(screen.settings.reset_with_p1_d),230);
     line(ITEM_CLEAR,"CLEAR RECORDS",screen.clear==2 ? "YES (ON EXIT)" : screen.clear==1 ? "A AGAIN TO CONFIRM" : "",260);
     line(ITEM_EXIT,"EXIT","",290);
     enj_qfont_color_set(160,160,160);
@@ -60,7 +60,7 @@ static void change(int direction) {
     case ITEM_DIFFICULTY: screen.settings.difficulty=(uint8_t)step(screen.settings.difficulty,NM_DIFFICULTY_COUNT,direction);break;
     case ITEM_ADVERTISE: screen.settings.advertise_sound=(uint8_t)step(screen.settings.advertise_sound,NM_ADVERTISE_COUNT,direction);break;
     case ITEM_CONTROL: screen.settings.control_scheme=(uint8_t)step(screen.settings.control_scheme,NM_CONTROL_COUNT,direction);break;
-    case ITEM_RESET: screen.settings.reset_with_p1_b=(uint8_t)step(screen.settings.reset_with_p1_b,NM_RESET_BUTTON_COUNT,direction);break;
+    case ITEM_RESET: screen.settings.reset_with_p1_d=(uint8_t)step(screen.settings.reset_with_p1_d,NM_RESET_BUTTON_COUNT,direction);break;
     case ITEM_CLEAR: screen.clear=screen.clear ? 2 : 1;break;
     case ITEM_EXIT: screen.leave=1;break;
     }
@@ -88,7 +88,7 @@ static void update(void *unused) {
             const int changed=screen.settings.difficulty!=nm_game_settings()->difficulty ||
                 screen.settings.advertise_sound!=nm_game_settings()->advertise_sound ||
                 screen.settings.control_scheme!=nm_game_settings()->control_scheme ||
-                screen.settings.reset_with_p1_b!=nm_game_settings()->reset_with_p1_b || screen.clear==2;
+                screen.settings.reset_with_p1_d!=nm_game_settings()->reset_with_p1_d || screen.clear==2;
             nm_game_settings_set(&screen.settings);
             if(screen.clear==2) nm_game_records_clear();
             if(changed) nm_game_save_request();
