@@ -16,7 +16,13 @@ static struct {
 
 static const char *card_line(void) {
 #if defined(_arch_sub_naomi)
-    return "NAOMI: RUNTIME ONLY (EEPROM/SRAM SAVE PENDING)";
+    const nm_game_save_status_t s=nm_game_save_status();
+    if(s.last==NM_SAVE_OK) return "NAOMI EEPROM: GAME SETTINGS SAVED; CONTROLS TEMPORARY";
+    if(s.last==NM_SAVE_DAMAGED) return "NAOMI EEPROM: INVALID, NOT OVERWRITTEN";
+    if(s.last==NM_SAVE_IO_ERROR) return "NAOMI EEPROM: READ/WRITE FAILED";
+    if(s.boot==NM_SAVE_OK) return "NAOMI EEPROM: GAME SETTINGS LOADED; CONTROLS TEMPORARY";
+    if(s.boot==NM_SAVE_DAMAGED) return "NAOMI EEPROM: INVALID; FACTORY SETTINGS IN USE";
+    return "NAOMI EEPROM: UNAVAILABLE; SETTINGS NOT PERSISTED";
 #else
     const nm_game_save_status_t s=nm_game_save_status();
     if(s.busy) return "VMU: SAVING...";
@@ -46,14 +52,20 @@ static void render(void *unused) {
     line(ITEM_ADVERTISE,"ADVERTISE SOUND",nm_settings_advertise_name(screen.settings.advertise_sound),170);
     line(ITEM_CONTROL,"CONTROL SCHEME",nm_settings_control_name(screen.settings.control_scheme),200);
     line(ITEM_RESET,"RESET WITH P1 D/4",nm_settings_reset_name(screen.settings.reset_with_p1_d),230);
-    line(ITEM_CLEAR,"CLEAR RECORDS",screen.clear==2 ? "YES (ON EXIT)" : screen.clear==1 ? "A AGAIN TO CONFIRM" : "",260);
+    line(ITEM_CLEAR,
+#if defined(_arch_sub_naomi)
+        "CLEAR SESSION RECORDS",
+#else
+        "CLEAR RECORDS",
+#endif
+        screen.clear==2 ? "YES (ON EXIT)" : screen.clear==1 ? "A AGAIN TO CONFIRM" : "",260);
     line(ITEM_EXIT,"EXIT","",290);
     enj_qfont_color_set(160,160,160);
     enj_qfont_write(card_line(),96,330,PVR_LIST_PT_POLY);
     enj_qfont_write("UP/DOWN SELECT  LEFT/RIGHT CHANGE",96,380,PVR_LIST_PT_POLY);
     enj_qfont_write(
 #if defined(_arch_sub_naomi)
-        "START APPLY AND EXIT  B CANCEL",
+        "START SAVE AND EXIT  B CANCEL",
 #else
         "START SAVE AND EXIT  B CANCEL",
 #endif
@@ -101,14 +113,12 @@ static void update(void *unused) {
                 screen.settings.reset_with_p1_d!=nm_game_settings()->reset_with_p1_d || screen.clear==2;
             nm_game_settings_set(&screen.settings);
             if(screen.clear==2) nm_game_records_clear();
-            #if !defined(_arch_sub_naomi)
-            if(changed) nm_game_save_request();
-#endif
+                        if(changed) nm_game_save_request();
             printf("Native settings: difficulty %s, advertise sound %s%s%s\n",
                 nm_settings_difficulty_name(screen.settings.difficulty),nm_settings_advertise_name(screen.settings.advertise_sound),
                 screen.clear==2 ? ", records cleared" : "",changed ?
 #if defined(_arch_sub_naomi)
-                ", runtime only (not persistent)" : ", unchanged");
+                ", EEPROM save requested; controls temporary" : ", unchanged");
 #else
                 ", saving" : ", unchanged");
 #endif
