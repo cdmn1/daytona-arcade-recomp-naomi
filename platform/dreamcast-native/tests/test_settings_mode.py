@@ -16,7 +16,7 @@ harness = r'''
 #include "game_save.h"
 #define ENJ_BUTTON_DOWN_THIS_FRAME 3
 #define PVR_LIST_PT_POLY 4
-typedef struct { unsigned A,B,START,UP,DOWN,LEFT,RIGHT; } buttons_t;
+typedef struct { unsigned A,B,D,START,UP,DOWN,LEFT,RIGHT; } buttons_t;
 typedef struct { buttons_t button; } enj_ctrlr_state_t;
 typedef struct { const char *name;void (*mode_updater)(void *); } enj_mode_t;
 static enj_ctrlr_state_t controller;
@@ -72,18 +72,21 @@ int main(void) {
     press(&controller.button.LEFT);assert(showing("EASY"));
     press(&controller.button.LEFT);assert(showing("HARDEST"));
     press(&controller.button.DOWN);press(&controller.button.A);assert(showing("OFF"));
+    press(&controller.button.DOWN);press(&controller.button.A);assert(showing("DIGITAL"));
+    press(&controller.button.DOWN);press(&controller.button.A);assert(showing("OFF"));
     press(&controller.button.DOWN);press(&controller.button.A);assert(showing("A AGAIN TO CONFIRM"));
     press(&controller.button.UP);press(&controller.button.DOWN);assert(!showing("CONFIRM")); /* moving away cancels */
     press(&controller.button.A);press(&controller.button.A);assert(showing("YES (ON EXIT)"));
     assert(beginner[0].name==0x585858);
     press(&controller.button.START);
     assert(!active && title_starts==2 && !shutdowns);
-    assert(nm_game_settings()->difficulty==NM_DIFFICULTY_HARDEST && nm_game_settings()->advertise_sound==NM_ADVERTISE_OFF);
+    assert(nm_game_settings()->difficulty==NM_DIFFICULTY_HARDEST && nm_game_settings()->advertise_sound==NM_ADVERTISE_OFF &&
+           nm_game_settings()->control_scheme==NM_CONTROL_DIGITAL && nm_game_settings()->reset_with_p1_d==NM_RESET_BUTTON_OFF);
     assert(beginner[0].name==0x414141);
     assert(nm_game_save_status().last==NM_SAVE_NO_CARD); /* a write was requested; the host has no card */
     /* EXIT with A, the screen shows the last write. */
     assert(nm_settings_mode_start());frame();assert(showing("VMU: NONE, NOT SAVED") && showing("HARDEST"));
-    for(unsigned i=0;i<3;++i) press(&controller.button.DOWN);
+    for(unsigned i=0;i<5;++i) press(&controller.button.DOWN);
     assert(showing("> EXIT"));
     press(&controller.button.A);assert(!active && title_starts==3);
     assert(sound_updates==frames && queued==frames-3); /* every frame updates the sound; the 3 leaving draw nothing */
