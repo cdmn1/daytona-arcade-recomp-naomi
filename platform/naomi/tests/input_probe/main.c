@@ -3,8 +3,12 @@
  * both the MIE/JVS bridge and independent standard Maple controllers.
  */
 #include <stdio.h>
+#include <string.h>
 #include <kos.h>
 #include <kos/init.h>
+#include <kos/dbgio.h>
+#include <dc/fb_console.h>
+#include <dc/video.h>
 #include <dc/maple.h>
 #include <dc/maple/controller.h>
 #include <dc/maple/mie.h>
@@ -12,7 +16,18 @@
 /* INIT_DEFAULT includes MIE automatically on the Naomi sub-architecture. */
 KOS_INIT_FLAGS(INIT_DEFAULT);
 
+static void clear_screen(void) {
+    int width = vid_mode ? vid_mode->width : 640;
+    int height = vid_mode ? vid_mode->height : 480;
+
+    memset(vram_s, 0, (size_t)width * (size_t)height * sizeof(uint16_t));
+    dbgio_fb_set_target(NULL, width, height, 32, 32);
+}
+
 int main(void) {
+    /* Naomi has a KOS framebuffer console backed by its built-in minifont. */
+    dbgio_dev_select("fb");
+
     puts("Daytona Naomi input probe");
 #if defined(_arch_sub_naomi)
     puts("KOS sub-architecture: Naomi");
@@ -26,7 +41,7 @@ int main(void) {
         int i;
         maple_device_t *dev;
 
-        printf("\033[2J\033[H");
+        clear_screen();
         puts("Daytona Naomi input probe");
 #if defined(_arch_sub_naomi)
         printf("Port A mode: %s\n",
@@ -76,7 +91,7 @@ int main(void) {
 
         if(!found_mie) puts("MIE/JVS: not detected");
         if(!found_pad) puts("Maple gamepad: not detected");
-        puts("Refreshes every 250 ms; see the serial/netboot console.");
+        puts("Refreshes every 250 ms.");
         thd_sleep(250);
     }
     return 0;
