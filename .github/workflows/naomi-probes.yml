@@ -115,7 +115,7 @@ jobs:
               body = s[start:end]
               if body.count(old) != 1:
                   raise SystemExit(f"Expected one retail guard in {function}")
-              s = s[:start] + body.replace(old, "#if !defined(_arch_sub_naomi)\\n    " + old + "\\n#endif") + s[end:]
+              s = s[:start] + body.replace(old, "#if !defined(_arch_sub_naomi)\n    " + old + "\n#endif") + s[end:]
           p.write_text(s)
           PY
           make -C "$KOS_BASE" -j2
