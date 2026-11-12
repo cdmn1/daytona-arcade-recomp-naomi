@@ -196,7 +196,7 @@ jobs:
           echo "All private inputs downloaded and merged on the ephemeral runner."
 
       - name: Test Naomi ROMFS tooling
-        run: python3 -m unittest platform/naomi/tests/test_romfs_tools.py
+        run: python3 platform/naomi/tests/test_romfs_tools.py
 
       - name: Generate complete Daytona assets
         env:
