@@ -125,7 +125,7 @@ class Pack:
         from PIL import Image
         w, h = tga_size(path)
         image = Image.open(path).convert('RGB').quantize(colors=16, method=Image.Quantize.MEDIANCUT).convert('RGB')
-        pixels = [bytes((b, g, r, 255)) for (r, g, b) in image.get_flattened_data()]
+        pixels = [bytes((b, g, r, 255)) for (r, g, b) in image.getdata()]
         self.quad(self.texture(pixels, w, h, True), x, y, w, h, 0, 0, role)
 
 
