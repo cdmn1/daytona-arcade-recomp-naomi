@@ -99,7 +99,8 @@ jobs:
           # MIE driver on Naomi builds only.
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("kernel/arch/dreamcast/hardware/maple/mie/mie.c")
+          import os
+          p = Path(os.environ["KOS_BASE"]) / "kernel/arch/dreamcast/hardware/maple/mie/mie.c"
           s = p.read_text()
           old = "if(hardware_sys_mode(NULL) == HW_TYPE_RETAIL) {"
           new = "#if !defined(_arch_sub_naomi)\n    " + old + "\n#endif"
