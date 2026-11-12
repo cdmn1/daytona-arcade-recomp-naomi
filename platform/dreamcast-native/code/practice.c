@@ -93,7 +93,7 @@ static enj_mode_t practice_mode={.name="Native driving practice",.mode_updater=p
  * 5010b0 = intro.object_clock + intro.ticks (include/attract.h). */
 static const uint32_t attract_tick_limit=NM_ATTRACT_TICKS;
 static int practice_credit_pending;
-static int practice_test_latched;
+static int practice_test_latched,practice_reset_latched;
 /* The carried part of the original's car pool (frontend_pool.h): from power-on (nm_practice_run), each scene's exit
  * stores its cars, each scene's start reads it. */
 static nm_entity_pool_t practice_pool;
@@ -945,7 +945,9 @@ static void practice_update(void *unused) {
         /* P1 D/4 is the observed session-reset input. It is independent of B/2, which is the digital brake.
          * The operator can disable reset in Game Test; START+B remains the inspector chord. */
 #if defined(_arch_sub_naomi)
-        const int reset_pressed=native_mie && (native_mie->jvs.p1.raw&MIE_JVS_SW10_BIT);
+        const int reset_held=native_mie && (native_mie->jvs.p1.raw&MIE_JVS_SW10_BIT);
+        const int reset_pressed=reset_held && !practice_reset_latched;
+        practice_reset_latched=reset_held;
 #else
         const int reset_pressed=c->button.B==ENJ_BUTTON_DOWN_THIS_FRAME;
 #endif
