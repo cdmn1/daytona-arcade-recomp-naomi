@@ -17,7 +17,7 @@ $(NAOMIBINTOOL):
 TARGET = naomi_cart_probe.elf
 BASE_ROM = naomi_cart_probe.base.bin
 ROMFS = naomi_cart_probe.romfs
-ROM = naomi_cart_probe.bin
+ROM = naomi_cart_probe_v1.bin
 OBJS = main.o ../../code/naomi_cart.o ../../code/naomi_romfs.o
 
 all: $(TARGET)
