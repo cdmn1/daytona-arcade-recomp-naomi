@@ -152,7 +152,8 @@ void nm_game_save_boot(const nm_race_record_seed_t seeds[NM_SAVE_TABLES][NM_SAVE
     nm_memset(inserted,0,sizeof(inserted));
     queued=0;next_ready=next_replace=0;settings_sets=settings_written=0;
 #if defined(_arch_sub_naomi)
-    status=(nm_game_save_status_t){.boot=naomi_settings_load(&live.settings),.last=NM_SAVE_NO_FILE};
+    status=(nm_game_save_status_t){.boot=use_card ? naomi_settings_load(&live.settings) : NM_SAVE_NO_CARD,
+        .last=NM_SAVE_NO_FILE};
 #else
     status=(nm_game_save_status_t){.boot=use_card ? nm_save_store_load(device,&live) : NM_SAVE_NO_CARD,
         .last=NM_SAVE_NO_FILE};
@@ -191,6 +192,7 @@ void nm_game_records_clear(void) {
 
 void nm_game_save_request(void) {
 #if defined(_arch_sub_naomi)
+    if(!use_card) return;
     status.last=naomi_settings_write(&live.settings);
     printf("Naomi I/O-board EEPROM: %s\n",nm_save_result_name(status.last));
     return;
