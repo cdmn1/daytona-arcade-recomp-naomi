@@ -1,6 +1,6 @@
 /*
- * ROM-free Naomi input probe. Reads KOS Maple status directly so it can show
- * both the MIE/JVS bridge and independent standard Maple controllers.
+ * Naomi JVS input probe. Explicitly enables KOS's MIE/JVS driver and reports
+ * native cabinet inputs; Maple gamepad input is intentionally out of scope.
  */
 #include <stdio.h>
 #include <string.h>
@@ -10,11 +10,10 @@
 #include <dc/fb_console.h>
 #include <dc/video.h>
 #include <dc/maple.h>
-#include <dc/maple/controller.h>
 #include <dc/maple/mie.h>
 
-/* INIT_DEFAULT includes MIE automatically on the Naomi sub-architecture. */
-KOS_INIT_FLAGS(INIT_DEFAULT);
+/* KOS requires INIT_MIE explicitly; INIT_DEFAULT alone does not enable it. */
+KOS_INIT_FLAGS(INIT_DEFAULT | INIT_MIE);
 
 static void clear_screen(void) {
     int width = vid_mode ? vid_mode->width : 640;
@@ -37,7 +36,6 @@ int main(void) {
 
     for(;;) {
         int found_mie = 0;
-        int found_pad = 0;
         int i;
         maple_device_t *dev;
 
@@ -78,19 +76,13 @@ int main(void) {
         puts("MIE/JVS details require the Naomi KOS sub-architecture");
 #endif
 
-        for(i = 0; (dev = maple_enum_type(i, MAPLE_FUNC_CONTROLLER)) != NULL; ++i) {
-            cont_state_t *pad = (cont_state_t *)maple_dev_status(dev);
-            if(!pad) continue;
-            found_pad = 1;
-            printf("Maple controller port %u unit %u\n",
-                   (unsigned)dev->port, (unsigned)dev->unit);
-            printf("  buttons=%08lx joy=(%d,%d) triggers=(%d,%d)\n",
-                   (unsigned long)pad->buttons, pad->joyx, pad->joyy,
-                   pad->ltrig, pad->rtrig);
+        if(!found_mie) {
+            puts("MIE/JVS: not detected by KOS");
+            puts("Check INIT_MIE and port A JVS detection");
+        } else {
+            puts("MIE/JVS device detected; native values above");
         }
 
-        if(!found_mie) puts("MIE/JVS: not detected");
-        if(!found_pad) puts("Maple gamepad: not detected");
         puts("Refreshes every 250 ms.");
         thd_sleep(250);
     }
