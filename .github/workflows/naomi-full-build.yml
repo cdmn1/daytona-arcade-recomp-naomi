@@ -87,8 +87,6 @@ jobs:
           KOS_BASE: ${{ github.workspace }}/KallistiOS
         run: |
           set -eo pipefail
-          mkdir -p "$GITHUB_WORKSPACE/kos-ports/include" \
-                   "$GITHUB_WORKSPACE/kos-ports/lib"
           cat > "$KOS_BASE/environ.sh" <<'EOF'
           export KOS_TOOLCHAIN="gcc"
           export KOS_ARCH="dreamcast"
@@ -129,6 +127,18 @@ jobs:
           p.write_text(s)
           PY
           make -C "$KOS_BASE" -j2
+
+      - name: Build Naomi zlib port
+        env:
+          KOS_BASE: ${{ github.workspace }}/KallistiOS
+        run: |
+          set -eo pipefail
+          export KOS_SUBARCH=naomi
+          . "$KOS_BASE/environ.sh"
+          git clone --depth 1 https://github.com/KallistiOS/kos-ports.git "$KOS_PORTS"
+          make -C "$KOS_PORTS/zlib" install
+          test -s "$KOS_PORTS/include/zlib.h"
+          test -s "$KOS_PORTS/lib/libz.a"
 
       - name: Fetch pinned enDjinn and AICAflow dependencies
         run: |
