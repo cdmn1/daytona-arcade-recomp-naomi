@@ -3,8 +3,50 @@
 #include <stdio.h>
 #include <string.h>
 #include "nm_mem.h"
+#if defined(_arch_sub_naomi)
+#include <dc/maple/mie.h>
+#endif
 
 static nm_save_t live;
+#if defined(_arch_sub_naomi)
+/* The game's 128-byte I/O-board EEPROM is the MIE IOR EEPROM transfer (REQUEST, then FETCH 0x03).
+ * Validate the Daytona identity and its CRC-16/XMODEM before touching any byte. */
+static uint16_t naomi_settings_crc(const uint8_t *data) {
+    uint16_t crc=0;
+    for(unsigned i=0x0a;i<0x80;++i) {
+        crc^=(uint16_t)data[i]<<8;
+        for(unsigned bit=0;bit<8;++bit)
+            crc=(uint16_t)(crc&0x8000u ? (crc<<1)^0x1021u : crc<<1);
+    }
+    return crc;
+}
+static int naomi_settings_eeprom_valid(const uint8_t eeprom[MIE_EEPROM_SIZE]) {
+    return !memcmp(eeprom,"SEGA",4) && eeprom[4]==0x82 && eeprom[5]==0x40 &&
+        eeprom[6]==0x00 && eeprom[7]==0x01 &&
+        (uint16_t)(eeprom[8]|(uint16_t)eeprom[9]<<8)==naomi_settings_crc(eeprom);
+}
+static nm_save_result_t naomi_settings_load(nm_settings_t *settings) {
+    uint8_t eeprom[MIE_EEPROM_SIZE];
+    if(!mie_get_eeprom(eeprom)) return NM_SAVE_IO_ERROR;
+    if(!naomi_settings_eeprom_valid(eeprom) || eeprom[0x20]>=NM_DIFFICULTY_COUNT ||
+       eeprom[0x19]>=NM_ADVERTISE_COUNT) return NM_SAVE_DAMAGED;
+    settings->difficulty=eeprom[0x20];
+    settings->advertise_sound=eeprom[0x19];
+    return NM_SAVE_OK;
+}
+static nm_save_result_t naomi_settings_write(const nm_settings_t *settings) {
+    uint8_t eeprom[MIE_EEPROM_SIZE];
+    if(!mie_get_eeprom(eeprom)) return NM_SAVE_IO_ERROR;
+    if(!naomi_settings_eeprom_valid(eeprom)) return NM_SAVE_DAMAGED;
+    /* Only the original GAME ASSIGNMENTS bytes are written. All other EEPROM
+     * fields (including coin settings, cabinet, country and save counter) survive. */
+    eeprom[0x19]=settings->advertise_sound;
+    eeprom[0x20]=settings->difficulty;
+    const uint16_t crc=naomi_settings_crc(eeprom);
+    eeprom[8]=(uint8_t)crc;eeprom[9]=(uint8_t)(crc>>8);
+    return mie_set_eeprom(eeprom) ? NM_SAVE_OK : NM_SAVE_IO_ERROR;
+}
+#endif
 static const nm_race_record_seed_t (*record_seeds)[NM_SAVE_SLOTS];
 static int use_card;
 /* Slots of each table inserted since the last request, kept in step with the insertions' shifts. */
@@ -109,8 +151,12 @@ void nm_game_save_boot(const nm_race_record_seed_t seeds[NM_SAVE_TABLES][NM_SAVE
     nm_save_defaults(&live,seeds);
     nm_memset(inserted,0,sizeof(inserted));
     queued=0;next_ready=next_replace=0;settings_sets=settings_written=0;
+#if defined(_arch_sub_naomi)
+    status=(nm_game_save_status_t){.boot=naomi_settings_load(&live.settings),.last=NM_SAVE_NO_FILE};
+#else
     status=(nm_game_save_status_t){.boot=use_card ? nm_save_store_load(device,&live) : NM_SAVE_NO_CARD,
         .last=NM_SAVE_NO_FILE};
+#endif
     printf("Native save: boot %s%s; difficulty %s, advertise sound %s\n",nm_save_result_name(status.boot),
         use_card ? "" : " (scripted: defaults, never written)",
         nm_settings_difficulty_name(live.settings.difficulty),nm_settings_advertise_name(live.settings.advertise_sound));
@@ -144,7 +190,13 @@ void nm_game_records_clear(void) {
 }
 
 void nm_game_save_request(void) {
+#if defined(_arch_sub_naomi)
+    status.last=naomi_settings_write(&live.settings);
+    printf("Naomi I/O-board EEPROM: %s\\n",nm_save_result_name(status.last));
+    return;
+#else
     if(!use_card) return;
+#endif
     LOCK();
     for(unsigned t=0;t<NM_SAVE_TABLES;++t) {
         for(unsigned slot=0;slot<NM_SAVE_SLOTS;++slot) if(inserted[t]>>slot&1u) {
