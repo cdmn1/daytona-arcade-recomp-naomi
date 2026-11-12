@@ -1,6 +1,11 @@
 ENJ_BASENAME := daytona-native
 ENJ_CFLAGS += -I$(abspath include)
 ifeq ($(KOS_SUBARCH),naomi)
+# enDjinn owns KOS_INIT_FLAGS in enj_state.c. Its default INIT_DEFAULT may
+# omit the MIE/JVS driver on Naomi KOS revisions where INIT_MAPLE_ALL does
+# not include INIT_MIE, so explicitly enable it for the full game as the
+# standalone input probe does.
+ENJ_CFLAGS += -DENJ_KOS_INIT_FLAGS='(INIT_DEFAULT | INIT_MIE)'
 ifdef NATIVE_DISC
 $(error Naomi uses the resident NetDIMM ROMFS; do not set NATIVE_DISC)
 endif
