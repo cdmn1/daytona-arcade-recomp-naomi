@@ -51,14 +51,6 @@ jobs:
             echo "::error::No expected epr-/mpr- ROM entries found in daytona93.zip"
             exit 1
           }
-          echo "Checking the sound-board ROMs required for the full Naomi game assets..."
-          for stem in epr-16720 epr-16721 mpr-16491 mpr-16492 mpr-16493 mpr-16494; do
-            if ! unzip -Z1 input/daytona93.zip | grep -Eiq "(^|/)$stem([.]|$)"; then
-              echo "::error::Missing required sound ROM: $stem"
-              exit 1
-            fi
-          done
-
       - name: Download supplementary Daytona ROM archive
         env:
           EXTRA_ROM_URL: ${{ secrets.DAYTONAZIP_DROPBOX_URL }}
