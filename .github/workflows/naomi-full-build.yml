@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: naomi-full-build-\${{ github.ref }}
+  group: naomi-full-build-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -20,16 +20,16 @@ jobs:
 
       - name: Check required private inputs and artifact passphrase
         env:
-          ROM_URL: \${{ secrets.DAYTONA93_DROPBOX_URL }}
-          EXTRA_ROM_URL: \${{ secrets.DAYTONAZIP_DROPBOX_URL }}
-          MUSIC_URL: \${{ secrets.DAYTONA_MUSIC_DROPBOX_URL }}
-          ARTIFACT_PASSWORD: \${{ secrets.NAOMI_ARTIFACT_PASSWORD }}
+          ROM_URL: ${{ secrets.DAYTONA93_DROPBOX_URL }}
+          EXTRA_ROM_URL: ${{ secrets.DAYTONAZIP_DROPBOX_URL }}
+          MUSIC_URL: ${{ secrets.DAYTONA_MUSIC_DROPBOX_URL }}
+          ARTIFACT_PASSWORD: ${{ secrets.NAOMI_ARTIFACT_PASSWORD }}
         run: |
           set -euo pipefail
           test -n "$ROM_URL" || { echo "::error::Missing DAYTONA93_DROPBOX_URL"; exit 1; }
           test -n "$EXTRA_ROM_URL" || { echo "::error::Missing DAYTONAZIP_DROPBOX_URL"; exit 1; }
           test -n "$MUSIC_URL" || { echo "::error::Missing DAYTONA_MUSIC_DROPBOX_URL"; exit 1; }
-          test "\${#ARTIFACT_PASSWORD}" -ge 16 || {
+          test "${#ARTIFACT_PASSWORD}" -ge 16 || {
             echo "::error::Add NAOMI_ARTIFACT_PASSWORD as a repository secret (at least 16 characters)."
             exit 1
           }
@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .toolchain/sh-elf
-          key: sh-elf-gcc15-stable-\${{ runner.os }}-naomi-v1
+          key: sh-elf-gcc15-stable-${{ runner.os }}-naomi-v1
 
       - name: Check out KallistiOS
         uses: actions/checkout@v4
@@ -62,8 +62,8 @@ jobs:
 
       - name: Build SH-4 toolchain if cache is empty
         env:
-          KOS_BASE: \${{ github.workspace }}/KallistiOS
-          KOS_CC_BASE: \${{ github.workspace }}/.toolchain/sh-elf
+          KOS_BASE: ${{ github.workspace }}/KallistiOS
+          KOS_CC_BASE: ${{ github.workspace }}/.toolchain/sh-elf
         run: |
           set -euo pipefail
           mkdir -p "$KOS_CC_BASE"
@@ -82,7 +82,7 @@ jobs:
 
       - name: Configure Naomi KOS environment and build KOS
         env:
-          KOS_BASE: \${{ github.workspace }}/KallistiOS
+          KOS_BASE: ${{ github.workspace }}/KallistiOS
         run: |
           set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/kos-ports/include" \
@@ -91,19 +91,19 @@ jobs:
           export KOS_TOOLCHAIN="gcc"
           export KOS_ARCH="dreamcast"
           export KOS_SUBARCH="naomi"
-          export KOS_BASE="\${GITHUB_WORKSPACE}/KallistiOS"
-          export KOS_PORTS="\${GITHUB_WORKSPACE}/kos-ports"
-          export KOS_CC_BASE="\${GITHUB_WORKSPACE}/.toolchain/sh-elf"
+          export KOS_BASE="${GITHUB_WORKSPACE}/KallistiOS"
+          export KOS_PORTS="${GITHUB_WORKSPACE}/kos-ports"
+          export KOS_CC_BASE="${GITHUB_WORKSPACE}/.toolchain/sh-elf"
           export KOS_CC_PREFIX="sh-elf"
-          export DC_ARM_BASE="\${GITHUB_WORKSPACE}/.toolchain/arm-eabi"
+          export DC_ARM_BASE="${GITHUB_WORKSPACE}/.toolchain/arm-eabi"
           export DC_ARM_PREFIX="arm-eabi"
-          export DC_TOOLS_BASE="\${GITHUB_WORKSPACE}/.toolchain/bin"
-          export KOS_GENROMFS="\${KOS_BASE}/utils/genromfs/genromfs"
-          export KOS_CMAKE_TOOLCHAIN="\${KOS_BASE}/utils/cmake/kallistios.toolchain.cmake"
+          export DC_TOOLS_BASE="${GITHUB_WORKSPACE}/.toolchain/bin"
+          export KOS_GENROMFS="${KOS_BASE}/utils/genromfs/genromfs"
+          export KOS_CMAKE_TOOLCHAIN="${KOS_BASE}/utils/cmake/kallistios.toolchain.cmake"
           export KOS_MAKE="make"
           export KOS_CFLAGS="-O2 -fno-PIC -fno-PIE -fomit-frame-pointer"
           export KOS_SH4_PRECISION="-m4-single"
-          . "\${KOS_BASE}/env/environ_base.sh"
+          . "${KOS_BASE}/env/environ_base.sh"
           EOF
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
@@ -136,7 +136,7 @@ jobs:
 
       - name: Build pinned SH4ZAM library
         env:
-          KOS_BASE: \${{ github.workspace }}/KallistiOS
+          KOS_BASE: ${{ github.workspace }}/KallistiOS
         run: |
           set -euo pipefail
           export KOS_SUBARCH=naomi
@@ -145,9 +145,9 @@ jobs:
 
       - name: Download private ROM and music inputs
         env:
-          ROM_URL: \${{ secrets.DAYTONA93_DROPBOX_URL }}
-          EXTRA_ROM_URL: \${{ secrets.DAYTONAZIP_DROPBOX_URL }}
-          MUSIC_URL: \${{ secrets.DAYTONA_MUSIC_DROPBOX_URL }}
+          ROM_URL: ${{ secrets.DAYTONA93_DROPBOX_URL }}
+          EXTRA_ROM_URL: ${{ secrets.DAYTONAZIP_DROPBOX_URL }}
+          MUSIC_URL: ${{ secrets.DAYTONA_MUSIC_DROPBOX_URL }}
         run: |
           set -euo pipefail
           mkdir -p input
@@ -200,7 +200,7 @@ jobs:
 
       - name: Generate complete Daytona assets
         env:
-          KOS_BASE: \${{ github.workspace }}/KallistiOS
+          KOS_BASE: ${{ github.workspace }}/KallistiOS
           CC: clang
           CXX: clang++
         run: |
@@ -213,25 +213,25 @@ jobs:
 
       - name: Compile Naomi game and append resident ROMFS
         env:
-          KOS_BASE: \${{ github.workspace }}/KallistiOS
+          KOS_BASE: ${{ github.workspace }}/KallistiOS
         run: |
           set -euo pipefail
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
           mapfile -t MAKE_VARS < <(grep -v '^#' build/naomi-assets/make-vars.txt)
           make -C platform/dreamcast-native \
-            "\${MAKE_VARS[@]}" \
+            "${MAKE_VARS[@]}" \
             NATIVE_RESIDENT_CAR=1 NATIVE_FRAME_PROFILE=1 NATIVE_HANDOPT=1 \
             RACE_TICK_LIMIT=0 \
             ENJ_BUILDDIR="$GITHUB_WORKSPACE/build/naomi-game/obj" \
             ENJ_BINDIR="$GITHUB_WORKSPACE/build/naomi-game/bin" \
             -j2 naomi-bin
           mapfile -t IMAGES < <(find build/naomi-game/bin -maxdepth 1 -type f -name '*.naomi.bin' -print)
-          test "\${#IMAGES[@]}" -eq 1 || {
-            echo "::error::Expected exactly one final Naomi .bin; found \${#IMAGES[@]}."
+          test "${#IMAGES[@]}" -eq 1 || {
+            echo "::error::Expected exactly one final Naomi .bin; found ${#IMAGES[@]}."
             exit 1
           }
-          python3 - "\${IMAGES[0]}" <<'PY'
+          python3 - "${IMAGES[0]}" <<'PY'
           import sys
           from pathlib import Path
           image = Path(sys.argv[1])
@@ -246,14 +246,14 @@ jobs:
 
       - name: Encrypt final image for private delivery
         env:
-          NAOMI_ARTIFACT_PASSWORD: \${{ secrets.NAOMI_ARTIFACT_PASSWORD }}
+          NAOMI_ARTIFACT_PASSWORD: ${{ secrets.NAOMI_ARTIFACT_PASSWORD }}
         run: |
           set -euo pipefail
           mkdir -p build/private-release
           mapfile -t IMAGES < <(find build/naomi-game/bin -maxdepth 1 -type f -name '*.naomi.bin' -print)
-          test "\${#IMAGES[@]}" -eq 1
+          test "${#IMAGES[@]}" -eq 1
           python3 platform/naomi/tools/secure_artifact.py \
-            --encrypt "\${IMAGES[0]}" \
+            --encrypt "${IMAGES[0]}" \
             --output build/private-release/daytona-naomi-netdimm.bin.enc
           cp platform/naomi/tools/secure_artifact.py build/private-release/
           cat > build/private-release/README.txt <<'EOF'
