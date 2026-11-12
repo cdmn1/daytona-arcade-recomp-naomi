@@ -1,9 +1,16 @@
 #ifndef NAOMI_HOST_STUB_DC_MAPLE_MIE_H
 #define NAOMI_HOST_STUB_DC_MAPLE_MIE_H
 #include <stdint.h>
+#include <stdbool.h>
 #include <dc/maple/controller.h>
 #define MIE_PORT0_JVS 1
 #define MIE_PORT0_MAPLE 2
+#define MIE_EEPROM_SIZE 128
+#define MIE_JVS_SW10_BIT (1u << 1)
+#define MIE_JVS_UP_BIT (1u << 13)
+#define MIE_JVS_RIGHT_BIT (1u << 10)
+#define MIE_JVS_DOWN_BIT (1u << 12)
+#define MIE_JVS_LEFT_BIT (1u << 11)
 typedef struct mie_jvs_inputs {
     uint16_t wheel;
     uint16_t accel;
@@ -23,4 +30,6 @@ typedef struct mie_state {
     mie_jvs_inputs_t jvs;
 } mie_state_t;
 int mie_port0_mode(void);
+bool mie_get_eeprom(void *dst);
+bool mie_set_eeprom(uint8_t *eeprom);
 #endif
