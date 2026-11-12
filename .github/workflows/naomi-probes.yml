@@ -105,5 +105,5 @@ jobs:
           name: naomi-netdimm-probes
           if-no-files-found: error
           path: |
-            platform/naomi/tests/cart_probe/naomi_cart_probe.bin
-            platform/naomi/tests/input_probe/naomi_input_probe.bin
+            platform/naomi/tests/cart_probe/naomi_cart_probe_v1.bin
+            platform/naomi/tests/input_probe/naomi_input_probe_v2.bin
