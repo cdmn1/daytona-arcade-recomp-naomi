@@ -13,6 +13,9 @@ NATIVE_ASSET_ROOT ?= /naomi/
 ifneq ($(NATIVE_ASSET_ROOT),/naomi/)
 $(error Naomi assets must be read from the resident /naomi/ ROMFS)
 endif
+# Unlike enDjinn's default per-game subdirectory, the Naomi ROMFS must
+# contain the complete generated game asset tree at its root.
+ROMBASEPATH := $(ENJ_ROMDIR)
 ENJ_CBASEPATH := /naomi/
 ENJ_CFLAGS += -I$(abspath ../naomi/include)
 OBJS += $(ENJ_BUILDDIR)/naomi/naomi_cart.o $(ENJ_BUILDDIR)/naomi/naomi_romfs.o
