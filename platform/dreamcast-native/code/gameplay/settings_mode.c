@@ -17,7 +17,7 @@ static struct {
 static const char *card_line(void) {
 #if defined(_arch_sub_naomi)
     const nm_game_save_status_t s=nm_game_save_status();
-    if(s.last==NM_SAVE_OK) return "NAOMI EEPROM: GAME SETTINGS SAVED; CONTROLS TEMPORARY";
+    if(s.last==NM_SAVE_OK) return "EEPROM SAVED; CONTROLS TEMP; SRAM PENDING";
     if(s.last==NM_SAVE_DAMAGED) return "NAOMI EEPROM: INVALID, NOT OVERWRITTEN";
     if(s.last==NM_SAVE_IO_ERROR) return "NAOMI EEPROM: READ/WRITE FAILED";
     if(s.boot==NM_SAVE_OK) return "NAOMI EEPROM: GAME SETTINGS LOADED; CONTROLS TEMPORARY";
