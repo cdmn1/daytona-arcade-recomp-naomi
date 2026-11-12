@@ -5,9 +5,8 @@
 /* What the game keeps between games (code/save/game_save.c, outside the race's LTO unit): the operator settings
  * the original keeps in its EEPROM and the records it keeps in backup RAM (include/save_data.h), on the VMU.
  *   - nm_game_save_boot, once before the title: the defaults (factory settings, the original's reset records),
- *     then the VMU's save on Dreamcast, or the original Daytona settings EEPROM on Naomi (blocking, before the
- *     first frame). Naomi records still need their backup-SRAM backend. use_card 0 (scripted races): defaults
- *     only, and nothing is ever written.
+ *     then the VMU's save on Dreamcast (blocking, before the first frame). Naomi's original EEPROM and backup-SRAM
+ *     persistence are not wired up yet. use_card 0 (scripted races): defaults only, and nothing is ever written.
  *   - The race reads the difficulty when it starts (code/practice.c), the title the advertise sound.
  *   - The race's end inserts into nm_game_records(course) (race_records.h) and reports the slot; the name entry
  *     writes the name into that slot; then nm_game_save_request (gameplay/name_mode.c) writes in the background
