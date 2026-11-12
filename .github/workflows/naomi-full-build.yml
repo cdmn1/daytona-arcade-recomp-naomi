@@ -138,7 +138,7 @@ jobs:
         env:
           KOS_BASE: ${{ github.workspace }}/KallistiOS
         run: |
-          set -euo pipefail
+          set -eo pipefail
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
           sh platform/dreamcast-native/scripts/fetch_sh4zam.sh
@@ -204,7 +204,7 @@ jobs:
           CC: clang
           CXX: clang++
         run: |
-          set -euo pipefail
+          set -eo pipefail
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
           zsh platform/dreamcast-native/recipes/build_assets.sh \
@@ -215,7 +215,7 @@ jobs:
         env:
           KOS_BASE: ${{ github.workspace }}/KallistiOS
         run: |
-          set -euo pipefail
+          set -eo pipefail
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
           mapfile -t MAKE_VARS < <(grep -v '^#' build/naomi-assets/make-vars.txt)
