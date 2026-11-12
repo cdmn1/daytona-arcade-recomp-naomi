@@ -53,7 +53,8 @@ static void put32(uint8_t *p,uint32_t v) { put16(p,v);put16(p+2,v>>16); }
 static uint32_t get16(const uint8_t *p) { return (uint32_t)p[0]|(uint32_t)p[1]<<8; }
 static uint32_t get32(const uint8_t *p) { return get16(p)|get16(p+2)<<16; }
 
-/* Payload: 0 "DNRS", 4 version, 6 size, 8 difficulty, 9 advertise sound, 10..12 selected, 13..15 zero,
+/* Payload v2: 0 "DNRS", 4 version, 6 size, 8 difficulty, 9 advertise, 10 control, 11 reset, 12..14 selected, 15 zero;
+ * v1 used 8..9 for settings, 10..12 for selected and 13..15 as zero. 
  * 16 the three tables (24 slots of six words), 1744 the time-attack words, 1808 CRC-32 of bytes 0..1807. */
 static const uint8_t payload_magic[4]={'D','N','R','S'};
 _Static_assert(sizeof(nm_save_t)==8+sizeof(nm_race_record_t)*NM_SAVE_TABLES*NM_SAVE_SLOTS+4*NM_SAVE_TIME_ATTACK_WORDS,
@@ -68,7 +69,8 @@ size_t nm_save_encode(const nm_save_t *save,uint8_t out[NM_SAVE_PAYLOAD_BYTES]) 
     nm_memcpy(out,payload_magic,4);
     put16(out+4,NM_SAVE_PAYLOAD_VERSION);put16(out+6,NM_SAVE_PAYLOAD_BYTES);
     out[8]=save->settings.difficulty;out[9]=save->settings.advertise_sound;
-    nm_memcpy(out+10,save->selected,NM_SAVE_TABLES);
+    out[10]=save->settings.control_scheme;out[11]=save->settings.reset_with_p1_b;
+    nm_memcpy(out+12,save->selected,NM_SAVE_TABLES);
     uint8_t *p=out+PAYLOAD_RECORDS;
     for(unsigned t=0;t<NM_SAVE_TABLES;++t) for(unsigned i=0;i<NM_SAVE_SLOTS;++i,p+=24) {
         const nm_race_record_t *r=&save->records[t][i];
@@ -82,12 +84,21 @@ size_t nm_save_encode(const nm_save_t *save,uint8_t out[NM_SAVE_PAYLOAD_BYTES]) 
 
 int nm_save_decode(const uint8_t *in,size_t size,nm_save_t *save) {
     if(!in || !save || size<NM_SAVE_PAYLOAD_BYTES || memcmp(in,payload_magic,4) ||
-       get16(in+4)!=NM_SAVE_PAYLOAD_VERSION || get16(in+6)!=NM_SAVE_PAYLOAD_BYTES ||
-       get32(in+PAYLOAD_CRC)!=nm_save_crc32(in,PAYLOAD_CRC) || in[13] || in[14] || in[15]) return 0;
+       (get16(in+4)!=1u && get16(in+4)!=NM_SAVE_PAYLOAD_VERSION) || get16(in+6)!=NM_SAVE_PAYLOAD_BYTES ||
+       get32(in+PAYLOAD_CRC)!=nm_save_crc32(in,PAYLOAD_CRC)) return 0;
     nm_save_t s;
-    s.settings=(nm_settings_t){.difficulty=in[8],.advertise_sound=in[9]};
+    if(get16(in+4)==1u) {
+        if(in[13] || in[14] || in[15]) return 0;
+        s.settings=nm_settings_factory();
+        s.settings.difficulty=in[8];s.settings.advertise_sound=in[9];
+        nm_memcpy(s.selected,in+10,NM_SAVE_TABLES);
+    } else {
+        if(in[15]) return 0;
+        s.settings=(nm_settings_t){.difficulty=in[8],.advertise_sound=in[9],
+            .control_scheme=in[10],.reset_with_p1_b=in[11]};
+        nm_memcpy(s.selected,in+12,NM_SAVE_TABLES);
+    }
     nm_memset(s.zero,0,sizeof(s.zero));
-    nm_memcpy(s.selected,in+10,NM_SAVE_TABLES);
     const uint8_t *p=in+PAYLOAD_RECORDS;
     for(unsigned t=0;t<NM_SAVE_TABLES;++t) for(unsigned i=0;i<NM_SAVE_SLOTS;++i,p+=24)
         s.records[t][i]=(nm_race_record_t){.rank=get32(p),.time=get32(p+4),.view=get32(p+8),
