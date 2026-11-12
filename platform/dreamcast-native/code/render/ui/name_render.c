@@ -2,6 +2,7 @@
 #include "lighting.h"
 #include <enDjinn/enj_defs.h>
 #include <enDjinn/enj_render.h>
+#include <sh4zam/shz_sh4zam.h>
 #include "nm_mem.h"
 
 static const nm_pack_t *pack;
