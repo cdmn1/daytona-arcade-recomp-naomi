@@ -17,7 +17,7 @@ $(ENJ_BUILDDIR)/naomi/%.o: ../naomi/code/%.c $(ENJ_MAKEFILE)
 	$(ENJ_CC) $(ENJ_INCLUDES) $(ENJ_CFLAGS) $(DEFINES) $(ENJ_DEPFLAGS) -c $< -o $@
 
 NAOMIBINTOOL := $(KOS_BASE)/utils/naomibintool/naomibintool
-NAOMI_VERSION ?= $(shell tr -d '\\r\\n' < ../../VERSION)
+NAOMI_VERSION ?= $(shell cat ../../VERSION)
 NAOMI_TITLE ?= Daytona USA Recomp v$(NAOMI_VERSION)
 NAOMI_BASE_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-base.bin
 NAOMI_ROMFS := $(ENJ_BINDIR)/$(ENJ_BASENAME).romfs
