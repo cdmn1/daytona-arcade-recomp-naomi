@@ -33,7 +33,7 @@
 typedef struct {
     nm_settings_t settings;
     uint8_t selected[NM_SAVE_TABLES];
-    uint8_t zero[3];                     /* no padding: whole structures compare */
+    uint8_t zero[1];                     /* payload header padding; no implicit padding */
     nm_race_record_t records[NM_SAVE_TABLES][NM_SAVE_SLOTS];
     uint32_t time_attack[NM_SAVE_TIME_ATTACK_WORDS];
 } nm_save_t;
@@ -51,7 +51,7 @@ int nm_save_valid(const nm_save_t *save);
 
 /* The payload: little-endian words, a magic, a version and a CRC-32 (IEEE) over everything before it. */
 #define NM_SAVE_PAYLOAD_BYTES 1812u
-#define NM_SAVE_PAYLOAD_VERSION 1u
+#define NM_SAVE_PAYLOAD_VERSION 2u
 size_t nm_save_encode(const nm_save_t *save,uint8_t out[NM_SAVE_PAYLOAD_BYTES]);
 /* 1 and *save filled when the payload is whole and valid; 0 leaves *save as it was. */
 int nm_save_decode(const uint8_t *payload,size_t size,nm_save_t *save);
