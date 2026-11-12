@@ -16,7 +16,7 @@ harness = r'''
 #include "game_save.h"
 #define ENJ_BUTTON_DOWN_THIS_FRAME 3
 #define PVR_LIST_PT_POLY 4
-typedef struct { unsigned A,B,D,START,UP,DOWN,LEFT,RIGHT; } buttons_t;
+typedef struct { unsigned A,B,START,UP,DOWN,LEFT,RIGHT; } buttons_t;
 typedef struct { buttons_t button; } enj_ctrlr_state_t;
 typedef struct { const char *name;void (*mode_updater)(void *); } enj_mode_t;
 static enj_ctrlr_state_t controller;
