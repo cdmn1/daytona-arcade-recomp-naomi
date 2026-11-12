@@ -15,7 +15,7 @@ $(NAOMIBINTOOL):
 	$(MAKE) -C $(KOS_BASE)/utils/naomibintool CC=cc
 
 TARGET = naomi_input_probe.elf
-ROM = naomi_input_probe_v4.bin
+ROM = naomi_input_probe_v5.bin
 OBJS = main.o
 
 all: $(TARGET)
