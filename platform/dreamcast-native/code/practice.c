@@ -32,6 +32,7 @@ static uint8_t practice_steer_table[256]; /* the pad's stick to the wheel's ADC 
 #include "race_record_data.h"
 #include "game_save.h"
 #include "gameplay/select_mode.h"
+#include "gameplay/settings_mode.h"
 #include "frontend.h"
 #include "nm_mem.h"
 /* The records live in the game's save state (include/game_save.h: the original's three backup-RAM tables, their
