@@ -100,12 +100,26 @@ static void test_insert(void) {
 
 static void test_payload_and_file(void) {
     nm_save_t s,t;nm_save_defaults(&s,seeds);
-    s.settings=(nm_settings_t){.difficulty=NM_DIFFICULTY_HARDEST,.advertise_sound=NM_ADVERTISE_OFF};
+    s.settings=(nm_settings_t){.difficulty=NM_DIFFICULTY_HARDEST,.advertise_sound=NM_ADVERTISE_OFF,
+        .control_scheme=NM_CONTROL_DIGITAL,.reset_with_p1_d=NM_RESET_BUTTON_OFF};
     s.selected[1]=4;s.records[2][7].name=0x00444342;s.records[2][7].view=2;s.time_attack[5]=9999;
     uint8_t payload[NM_SAVE_PAYLOAD_BYTES];
     assert(nm_save_encode(&s,payload)==NM_SAVE_PAYLOAD_BYTES);
     memset(&t,0,sizeof(t));
     assert(nm_save_decode(payload,sizeof(payload),&t) && !memcmp(&s,&t,sizeof(s)));
+    /* Version 1 VMU saves retain their old offsets; new controls take safe factory defaults. */
+    uint8_t legacy[NM_SAVE_PAYLOAD_BYTES];
+    memcpy(legacy,payload,sizeof(legacy));
+    legacy[10]=legacy[12];legacy[11]=legacy[13];legacy[12]=legacy[14];
+    legacy[13]=legacy[14]=legacy[15]=0;
+    legacy[4]=1;legacy[5]=0;
+    const uint32_t legacy_crc=nm_save_crc32(legacy,sizeof(legacy)-4);
+    legacy[sizeof(legacy)-4]=(uint8_t)legacy_crc;legacy[sizeof(legacy)-3]=(uint8_t)(legacy_crc>>8);
+    legacy[sizeof(legacy)-2]=(uint8_t)(legacy_crc>>16);legacy[sizeof(legacy)-1]=(uint8_t)(legacy_crc>>24);
+    memset(&t,0,sizeof(t));
+    assert(nm_save_decode(legacy,sizeof(legacy),&t));
+    assert(t.settings.difficulty==s.settings.difficulty && t.settings.advertise_sound==s.settings.advertise_sound &&
+        t.settings.control_scheme==NM_CONTROL_ANALOG && t.settings.reset_with_p1_d==NM_RESET_BUTTON_ON);
     /* Every damaged byte, a short buffer and invalid contents are refused, leaving the target unchanged. */
     for(unsigned i=0;i<sizeof(payload);++i) {
         payload[i]^=0x40;memset(&t,0x5a,sizeof(t));
