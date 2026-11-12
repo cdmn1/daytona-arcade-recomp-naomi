@@ -63,13 +63,7 @@ static void render(void *unused) {
     enj_qfont_color_set(160,160,160);
     enj_qfont_write(card_line(),96,330,PVR_LIST_PT_POLY);
     enj_qfont_write("UP/DOWN SELECT  LEFT/RIGHT CHANGE",96,380,PVR_LIST_PT_POLY);
-    enj_qfont_write(
-#if defined(_arch_sub_naomi)
-        "START SAVE AND EXIT  B CANCEL",
-#else
-        "START SAVE AND EXIT  B CANCEL",
-#endif
-        96,404,PVR_LIST_PT_POLY);
+    enj_qfont_write("START SAVE AND EXIT  B CANCEL",96,404,PVR_LIST_PT_POLY);
     enj_qfont_color_set(255,255,255);
 }
 
