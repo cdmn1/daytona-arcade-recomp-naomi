@@ -8,7 +8,13 @@
 typedef struct maple_device {
     uint8_t port;
     uint8_t unit;
+    uint8_t valid;
+    struct {
+        const char *product_name;
+        uint32_t functions;
+    } info;
 } maple_device_t;
 maple_device_t *maple_enum_type(size_t index, uint32_t function);
+maple_device_t *maple_enum_dev(int port, int unit);
 void *maple_dev_status(maple_device_t *device);
 #endif
