@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <kos/mm.h>
+#if defined(_arch_sub_naomi)
+#include <dc/maple.h>
+#include <dc/maple/mie.h>
+#endif
 #include <arch/stack.h>
 #ifdef NATIVE_FRAME_COMPARE
 #include <dc/video.h>
@@ -89,6 +93,7 @@ static enj_mode_t practice_mode={.name="Native driving practice",.mode_updater=p
  * 5010b0 = intro.object_clock + intro.ticks (include/attract.h). */
 static const uint32_t attract_tick_limit=NM_ATTRACT_TICKS;
 static int practice_credit_pending;
+static int practice_test_latched;
 /* The carried part of the original's car pool (frontend_pool.h): from power-on (nm_practice_run), each scene's exit
  * stores its cars, each scene's start reads it. */
 static nm_entity_pool_t practice_pool;
@@ -874,17 +879,39 @@ static void practice_update(void *unused) {
     }
 #elif !defined(NATIVE_DRIVING_TEST)
     nm_controls_t controls = {0};
+#if defined(_arch_sub_naomi)
+    mie_state_t *native_mie=NULL;
+    maple_device_t *mie_dev;
+    for(int mi=0;(mie_dev=maple_enum_type(mi,MAPLE_FUNC_MIE))!=NULL;++mi) {
+        native_mie=(mie_state_t *)maple_dev_status(mie_dev);
+        if(native_mie) break;
+    }
+#endif
     enj_ctrlr_state_t **controllers = enj_ctrl_get_states();
     for (size_t i=0; i<enj_ctrl_states_length(); ++i) if (controllers[i]) {
         const enj_ctrlr_state_t *c = controllers[i];
-        /* The stick through the steering table (include/steer_curve.h: dead zone, power curve, full lock at the
-         * ends) into the existing arcade ADC decoder; the triggers over their full ranges. The decoder and the
-         * race after it stay the arcade's. */
-        controls = nm_controls_decode(nm_steer_table_adc(practice_steer_table,c->joyx),
-            (uint8_t)(56+(unsigned)c->rtrigger*128/255),
-            (uint8_t)(56+(unsigned)c->ltrigger*96/255),
-            practice.controller_last.accel,practice.controller_last.brake);
+        const int digital=nm_game_settings()->control_scheme==NM_CONTROL_DIGITAL;
+        const int8_t steer_axis=digital ? (int8_t)((c->button.LEFT&1u)?-127:(c->button.RIGHT&1u)?127:0) : c->joyx;
+        const uint8_t accel_axis=digital ? (uint8_t)((c->button.A&1u)?184:56) :
+            (uint8_t)(56+(unsigned)c->rtrigger*128/255);
+        const uint8_t brake_axis=digital ? (uint8_t)((c->button.B&1u)?152:56) :
+            (uint8_t)(56+(unsigned)c->ltrigger*96/255);
+        /* Both schemes feed the same arcade ADC decoder. Digital uses full-lock left/right and
+         * the existing pedal endpoints; analog preserves the calibrated wheel and trigger path. */
+        controls = nm_controls_decode(nm_steer_table_adc(practice_steer_table,steer_axis),
+            accel_axis,brake_axis,practice.controller_last.accel,practice.controller_last.brake);
         ++practice.controller_samples;practice.controller_last=controls;
+#if defined(_arch_sub_naomi)
+        const int test_active=native_mie &&
+            (native_mie->jvs.panel.psw.test || native_mie->jvs.system.test);
+        if(!test_active) practice_test_latched=0;
+        if(practice.attract_active && !practice.podium.phase && test_active && !practice_test_latched) {
+            practice_test_latched=1;
+            nm_practice_render_release();
+            if(!nm_settings_mode_start()) enj_state_flag_shutdown(NULL);
+            return;
+        }
+#endif
         if(practice.attract_active && !practice.podium.phase &&
            (c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME || c->button.A==ENJ_BUTTON_DOWN_THIS_FRAME)) {
             /* Both triggers and START: the settings screen; else the credit (1108 -> 2818), taken by the next
@@ -901,9 +928,24 @@ static void practice_update(void *unused) {
             if(PRACTICE_SHIFT_UP(c)) practice.shift_pending=1;
             else if(PRACTICE_SHIFT_DOWN(c)) practice.shift_pending=-1;
         }
-        if(!practice.attract_active) practice_view_buttons(c);
-        /* B alone: the session reset; START held + B is the inspector's toggle (code/render/scene/practice.c). */
-        if (!practice.attract_active && c->button.B == ENJ_BUTTON_DOWN_THIS_FRAME && !(c->button.START&1)) {
+        if(!practice.attract_active) {
+            if(digital) {
+#if defined(_arch_sub_naomi)
+                const uint16_t p2=native_mie ? native_mie->jvs.p2.raw : 0;
+                practice_view_pad=(c->button.START&1u ? NM_VIEW_HELD_START : 0u)|
+                    ((p2&MIE_JVS_UP_BIT)?NM_VIEW_HELD_VR1:0u)|
+                    ((p2&MIE_JVS_RIGHT_BIT)?NM_VIEW_HELD_VR2:0u)|
+                    ((p2&MIE_JVS_DOWN_BIT)?NM_VIEW_HELD_VR3:0u)|
+                    ((p2&MIE_JVS_LEFT_BIT)?NM_VIEW_HELD_VR4:0u);
+#else
+                practice_view_pad=0;
+#endif
+            } else practice_view_buttons(c);
+        }
+        /* Reset is deliberately disabled in DIGITAL mode: P1 B/2 is the brake there.
+         * In ANALOG mode it remains the optional B reset, unless START+B is the inspector chord. */
+        if (!practice.attract_active && !digital && nm_game_settings()->reset_with_p1_b==NM_RESET_BUTTON_ON &&
+            c->button.B == ENJ_BUTTON_DOWN_THIS_FRAME && !(c->button.START&1)) {
             practice.failed = !practice_reset_session(NULL);
             if(!practice.failed) practice.failed=!practice_race_detail();
         }
