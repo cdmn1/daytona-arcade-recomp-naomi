@@ -42,9 +42,18 @@ int main(void) {
         clear_screen();
         puts("Daytona Naomi input probe");
 #if defined(_arch_sub_naomi)
-        printf("Port A mode: %s\n",
+        printf("Port A mode: %s\\n",
                mie_port0_mode() == MIE_PORT0_JVS ? "JVS" :
                mie_port0_mode() == MIE_PORT0_MAPLE ? "Maple" : "unknown");
+        dev = maple_enum_dev(0, 0);
+        if(dev) {
+            printf("Port A unit 0: %s\\n",
+                   dev->info.product_name ? dev->info.product_name : "(unnamed)");
+            printf("  function mask: %08lx\\n",
+                   (unsigned long)dev->info.functions);
+        } else {
+            puts("Port A unit 0: no enumerated Maple device");
+        }
 
         for(i = 0; (dev = maple_enum_type(i, MAPLE_FUNC_MIE)) != NULL; ++i) {
             mie_state_t *mie = (mie_state_t *)maple_dev_status(dev);
