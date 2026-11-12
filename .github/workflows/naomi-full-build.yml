@@ -207,6 +207,8 @@ jobs:
           set -eo pipefail
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
+          # enDjinn defaults to its developer workstation KOS path; use this runner's KOS checkout.
+          sed -i 's|^source /opt/toolchains/dc/kos/environ.sh$|source "$KOS_BASE/environ.sh"|' extern/endjinn/environ.sh
           zsh platform/dreamcast-native/recipes/build_assets.sh \
             input/daytona93-complete.zip build/naomi-assets \
             --music input/daytona-music.zip --jobs 2
