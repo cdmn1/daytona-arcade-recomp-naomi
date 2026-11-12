@@ -235,7 +235,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build/naomi-assets
-          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!platform/dreamcast-native/**/__pycache__/**', '!platform/dreamcast-native/**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
+          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!**/__pycache__/**', '!**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
           restore-keys: |
             naomi-assets-${{ runner.os }}-1923733be4c9ee171ff5846d0d8f39f0a4f4027d03e970a266a94da7d281f8d6-7f52d06d5d1b2a2ccba88c7f32abbc830b0cdaed9bce238d627adb9667df64af
 
@@ -291,7 +291,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: build/naomi-assets
-          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!platform/dreamcast-native/**/__pycache__/**', '!platform/dreamcast-native/**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
+          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!**/__pycache__/**', '!**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
 
       - name: Compile Naomi game and append resident ROMFS
         env:
