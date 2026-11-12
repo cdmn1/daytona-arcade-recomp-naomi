@@ -2,15 +2,6 @@ name: Naomi ROM input check
 
 on:
   workflow_dispatch:
-    inputs:
-      daytona_rom_url:
-        description: "Dropbox direct-download URL for daytona93.zip (use dl=1)"
-        required: true
-        type: string
-      music_zip_url:
-        description: "Optional direct-download URL for the Daytona USA VGMrips music ZIP (use dl=1)"
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -19,9 +10,25 @@ jobs:
   fetch-and-validate:
     runs-on: ubuntu-latest
     steps:
+      - name: Check required private inputs
+        env:
+          ROM_URL: ${{ secrets.DAYTONA93_DROPBOX_URL }}
+          MUSIC_URL: ${{ secrets.DAYTONA_MUSIC_DROPBOX_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$ROM_URL" ]; then
+            echo "::error::Add the DAYTONA93_DROPBOX_URL repository secret before running this workflow."
+            exit 1
+          fi
+          if [ -z "$MUSIC_URL" ]; then
+            echo "::error::Add the DAYTONA_MUSIC_DROPBOX_URL repository secret before running this workflow."
+            exit 1
+          fi
+          echo "Both private download secrets are configured."
+
       - name: Download Daytona ROM archive
         env:
-          ROM_URL: ${{ inputs.daytona_rom_url }}
+          ROM_URL: ${{ secrets.DAYTONA93_DROPBOX_URL }}
         run: |
           set -euo pipefail
           mkdir -p input
@@ -33,17 +40,16 @@ jobs:
           echo "ROM archive downloaded and ZIP integrity verified."
           echo "Archive size: $(stat -c '%s bytes' input/daytona93.zip)"
           echo "Archive entries:"
-          unzip -Z1 input/daytona93.zip | sed -n '1,80p'
-          echo "Checking for expected Daytona ROM files..."
-          unzip -Z1 input/daytona93.zip | grep -Eiq '(^|/)(epr-|mpr-).*\.(bin|ic[0-9]+|rom)$' || {
+          unzip -Z1 input/daytona93.zip | sed -n '1,100p'
+          echo "Checking for Daytona ROM program and data entries..."
+          unzip -Z1 input/daytona93.zip | grep -Eiq '(^|/)(epr-|mpr-).*(\\.bin|\\.ic[0-9]+|\\.rom)$' || {
             echo "::error::No expected epr-/mpr- ROM entries found in daytona93.zip"
             exit 1
           }
 
-      - name: Download and validate optional music archive
-        if: ${{ inputs.music_zip_url != '' }}
+      - name: Download and validate music archive
         env:
-          MUSIC_URL: ${{ inputs.music_zip_url }}
+          MUSIC_URL: ${{ secrets.DAYTONA_MUSIC_DROPBOX_URL }}
         run: |
           set -euo pipefail
           curl --fail --location --retry 3 --retry-all-errors \
