@@ -107,7 +107,7 @@ static void update(void *unused) {
                 screen.settings.reset_with_p1_d!=nm_game_settings()->reset_with_p1_d || screen.clear==2;
             nm_game_settings_set(&screen.settings);
             if(screen.clear==2) nm_game_records_clear();
-                        if(changed) nm_game_save_request();
+            if(changed) nm_game_save_request();
             printf("Native settings: difficulty %s, advertise sound %s%s%s\n",
                 nm_settings_difficulty_name(screen.settings.difficulty),nm_settings_advertise_name(screen.settings.advertise_sound),
                 screen.clear==2 ? ", records cleared" : "",changed ?
