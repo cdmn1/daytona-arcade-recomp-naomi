@@ -235,9 +235,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build/naomi-assets
-          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
+          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!platform/dreamcast-native/**/__pycache__/**', '!platform/dreamcast-native/**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
           restore-keys: |
-            naomi-assets-${{ runner.os }}-84ae89330a378195949a673ce19a7230123867f0d1c868adcbf595831cc1bead-7f52d06d5d1b2a2ccba88c7f32abbc830b0cdaed9bce238d627adb9667df64af
+            naomi-assets-${{ runner.os }}-1923733be4c9ee171ff5846d0d8f39f0a4f4027d03e970a266a94da7d281f8d6-7f52d06d5d1b2a2ccba88c7f32abbc830b0cdaed9bce238d627adb9667df64af
 
       - name: Pre-flight Naomi build checks
         env:
@@ -273,6 +273,7 @@ jobs:
           KOS_BASE: ${{ github.workspace }}/KallistiOS
           CC: clang
           CXX: clang++
+          PYTHONDONTWRITEBYTECODE: '1'
         run: |
           set -eo pipefail
           export KOS_SUBARCH=naomi
@@ -290,7 +291,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: build/naomi-assets
-          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
+          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!platform/dreamcast-native/**/__pycache__/**', '!platform/dreamcast-native/**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
 
       - name: Compile Naomi game and append resident ROMFS
         env:
