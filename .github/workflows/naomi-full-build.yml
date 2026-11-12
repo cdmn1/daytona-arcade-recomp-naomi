@@ -1,0 +1,289 @@
+name: Build Daytona USA Naomi NetDIMM image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: naomi-full-build-\${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-naomi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out Daytona project
+        uses: actions/checkout@v4
+
+      - name: Check required private inputs and artifact passphrase
+        env:
+          ROM_URL: \${{ secrets.DAYTONA93_DROPBOX_URL }}
+          EXTRA_ROM_URL: \${{ secrets.DAYTONAZIP_DROPBOX_URL }}
+          MUSIC_URL: \${{ secrets.DAYTONA_MUSIC_DROPBOX_URL }}
+          ARTIFACT_PASSWORD: \${{ secrets.NAOMI_ARTIFACT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ROM_URL" || { echo "::error::Missing DAYTONA93_DROPBOX_URL"; exit 1; }
+          test -n "$EXTRA_ROM_URL" || { echo "::error::Missing DAYTONAZIP_DROPBOX_URL"; exit 1; }
+          test -n "$MUSIC_URL" || { echo "::error::Missing DAYTONA_MUSIC_DROPBOX_URL"; exit 1; }
+          test "\${#ARTIFACT_PASSWORD}" -ge 16 || {
+            echo "::error::Add NAOMI_ARTIFACT_PASSWORD as a repository secret (at least 16 characters)."
+            exit 1
+          }
+          echo "All required secrets are configured."
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential clang cmake ninja-build zsh \
+            bison flex texinfo gettext \
+            libjpeg-dev libpng-dev libelf-dev \
+            libgmp-dev libmpfr-dev libmpc-dev libisl-dev \
+            zlib1g-dev libncurses-dev pkg-config \
+            git subversion python3 python3-numpy python3-pil python3-cryptography \
+            wget curl unzip
+
+      - name: Restore SH-4 toolchain cache
+        uses: actions/cache@v4
+        with:
+          path: .toolchain/sh-elf
+          key: sh-elf-gcc15-stable-\${{ runner.os }}-naomi-v1
+
+      - name: Check out KallistiOS
+        uses: actions/checkout@v4
+        with:
+          repository: KallistiOS/KallistiOS
+          ref: master
+          path: KallistiOS
+
+      - name: Build SH-4 toolchain if cache is empty
+        env:
+          KOS_BASE: \${{ github.workspace }}/KallistiOS
+          KOS_CC_BASE: \${{ github.workspace }}/.toolchain/sh-elf
+        run: |
+          set -euo pipefail
+          mkdir -p "$KOS_CC_BASE"
+          if [ ! -x "$KOS_CC_BASE/bin/sh-elf-gcc" ]; then
+            cp "$KOS_BASE/utils/kos-chain/Makefile.dreamcast.cfg" \
+               "$KOS_BASE/utils/kos-chain/Makefile.cfg"
+            sed -i \
+              -e "s|^toolchain_path=.*|toolchain_path=$KOS_CC_BASE|" \
+              -e 's|^makejobs=.*|makejobs=4|' \
+              -e 's|^enable_objc=.*|enable_objc=0|' \
+              -e 's|^enable_objcpp=.*|enable_objcpp=0|' \
+              -e 's|^precision_modes=.*|precision_modes=m4-single|' \
+              "$KOS_BASE/utils/kos-chain/Makefile.cfg"
+            make -C "$KOS_BASE/utils/kos-chain"
+          fi
+
+      - name: Configure Naomi KOS environment and build KOS
+        env:
+          KOS_BASE: \${{ github.workspace }}/KallistiOS
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/kos-ports/include" \
+                   "$GITHUB_WORKSPACE/kos-ports/lib"
+          cat > "$KOS_BASE/environ.sh" <<'EOF'
+          export KOS_TOOLCHAIN="gcc"
+          export KOS_ARCH="dreamcast"
+          export KOS_SUBARCH="naomi"
+          export KOS_BASE="\${GITHUB_WORKSPACE}/KallistiOS"
+          export KOS_PORTS="\${GITHUB_WORKSPACE}/kos-ports"
+          export KOS_CC_BASE="\${GITHUB_WORKSPACE}/.toolchain/sh-elf"
+          export KOS_CC_PREFIX="sh-elf"
+          export DC_ARM_BASE="\${GITHUB_WORKSPACE}/.toolchain/arm-eabi"
+          export DC_ARM_PREFIX="arm-eabi"
+          export DC_TOOLS_BASE="\${GITHUB_WORKSPACE}/.toolchain/bin"
+          export KOS_GENROMFS="\${KOS_BASE}/utils/genromfs/genromfs"
+          export KOS_CMAKE_TOOLCHAIN="\${KOS_BASE}/utils/cmake/kallistios.toolchain.cmake"
+          export KOS_MAKE="make"
+          export KOS_CFLAGS="-O2 -fno-PIC -fno-PIE -fomit-frame-pointer"
+          export KOS_SH4_PRECISION="-m4-single"
+          . "\${KOS_BASE}/env/environ_base.sh"
+          EOF
+          export KOS_SUBARCH=naomi
+          . "$KOS_BASE/environ.sh"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p = Path(os.environ["KOS_BASE"]) / "kernel/arch/dreamcast/hardware/maple/mie/mie.c"
+          s = p.read_text()
+          replacements = (
+              ("bool mie_init_fw(const char *fw_path) {", "    if(hardware_sys_mode(NULL) == HW_TYPE_RETAIL) {\n        return false;\n    }\n\n"),
+              ("void mie_init(void) {", "    if(hardware_sys_mode(NULL) == HW_TYPE_RETAIL) {\n        return;\n    }\n\n"),
+          )
+          for function, guard in replacements:
+              start = s.find(function)
+              if start < 0:
+                  raise SystemExit(f"Could not find {function}")
+              guard_at = s.find(guard, start + len(function))
+              if guard_at < 0:
+                  raise SystemExit(f"Could not find Retail guard in {function}")
+              s = s[:guard_at] + s[guard_at + len(guard):]
+          p.write_text(s)
+          PY
+          make -C "$KOS_BASE" -j2
+
+      - name: Fetch pinned enDjinn and AICAflow dependencies
+        run: |
+          set -euo pipefail
+          sh platform/dreamcast-native/scripts/fetch_endjinn.sh
+          sh platform/dreamcast-native/scripts/fetch_aicaflow.sh
+
+      - name: Build pinned SH4ZAM library
+        env:
+          KOS_BASE: \${{ github.workspace }}/KallistiOS
+        run: |
+          set -euo pipefail
+          export KOS_SUBARCH=naomi
+          . "$KOS_BASE/environ.sh"
+          sh platform/dreamcast-native/scripts/fetch_sh4zam.sh
+
+      - name: Download private ROM and music inputs
+        env:
+          ROM_URL: \${{ secrets.DAYTONA93_DROPBOX_URL }}
+          EXTRA_ROM_URL: \${{ secrets.DAYTONAZIP_DROPBOX_URL }}
+          MUSIC_URL: \${{ secrets.DAYTONA_MUSIC_DROPBOX_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p input
+          curl --fail --location --retry 3 --retry-all-errors --connect-timeout 30 --max-time 600 \
+            --output input/daytona93.zip "$ROM_URL"
+          curl --fail --location --retry 3 --retry-all-errors --connect-timeout 30 --max-time 600 \
+            --output input/daytona-extra.zip "$EXTRA_ROM_URL"
+          curl --fail --location --retry 3 --retry-all-errors --connect-timeout 30 --max-time 600 \
+            --output input/daytona-music.zip "$MUSIC_URL"
+          unzip -tq input/daytona93.zip
+          unzip -tq input/daytona-extra.zip
+          unzip -tq input/daytona-music.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+
+          required = (
+              "epr-16720.7", "epr-16721.8", "mpr-16491.32",
+              "mpr-16492.33", "mpr-16493.4", "mpr-16494.5",
+          )
+          base = Path("input/daytona93.zip")
+          extra = Path("input/daytona-extra.zip")
+          output = Path("input/daytona93-complete.zip")
+          with ZipFile(base) as first, ZipFile(extra) as second, ZipFile(output, "w", ZIP_DEFLATED) as merged:
+              base_names = set()
+              for info in first.infolist():
+                  if info.is_dir():
+                      continue
+                  merged.writestr(info, first.read(info.filename))
+                  base_names.add(Path(info.filename).name)
+              for wanted in required:
+                  if wanted in base_names:
+                      continue
+                  matches = [item for item in second.infolist()
+                             if not item.is_dir() and Path(item.filename).name == wanted]
+                  if len(matches) != 1:
+                      raise SystemExit(f"expected exactly one {wanted} in supplementary daytona.zip; found {len(matches)}")
+                  merged.writestr(wanted, second.read(matches[0].filename))
+          with ZipFile(output) as result:
+              names = {Path(item).name for item in result.namelist()}
+              missing = [name for name in required if name not in names]
+              if missing:
+                  raise SystemExit("merged ROM set is missing: " + ", ".join(missing))
+              print(f"Combined ROM archive is valid: {len(result.namelist())} files")
+          PY
+          echo "All private inputs downloaded and merged on the ephemeral runner."
+
+      - name: Test Naomi ROMFS tooling
+        run: python3 -m unittest platform/naomi/tests/test_romfs_tools.py
+
+      - name: Generate complete Daytona assets
+        env:
+          KOS_BASE: \${{ github.workspace }}/KallistiOS
+          CC: clang
+          CXX: clang++
+        run: |
+          set -euo pipefail
+          export KOS_SUBARCH=naomi
+          . "$KOS_BASE/environ.sh"
+          zsh platform/dreamcast-native/recipes/build_assets.sh \
+            input/daytona93-complete.zip build/naomi-assets \
+            --music input/daytona-music.zip --jobs 2
+
+      - name: Compile Naomi game and append resident ROMFS
+        env:
+          KOS_BASE: \${{ github.workspace }}/KallistiOS
+        run: |
+          set -euo pipefail
+          export KOS_SUBARCH=naomi
+          . "$KOS_BASE/environ.sh"
+          mapfile -t MAKE_VARS < <(grep -v '^#' build/naomi-assets/make-vars.txt)
+          make -C platform/dreamcast-native \
+            "\${MAKE_VARS[@]}" \
+            NATIVE_RESIDENT_CAR=1 NATIVE_FRAME_PROFILE=1 NATIVE_HANDOPT=1 \
+            RACE_TICK_LIMIT=0 \
+            ENJ_BUILDDIR="$GITHUB_WORKSPACE/build/naomi-game/obj" \
+            ENJ_BINDIR="$GITHUB_WORKSPACE/build/naomi-game/bin" \
+            -j2 naomi-bin
+          mapfile -t IMAGES < <(find build/naomi-game/bin -maxdepth 1 -type f -name '*.naomi.bin' -print)
+          test "\${#IMAGES[@]}" -eq 1 || {
+            echo "::error::Expected exactly one final Naomi .bin; found \${#IMAGES[@]}."
+            exit 1
+          }
+          python3 - "\${IMAGES[0]}" <<'PY'
+          import sys
+          from pathlib import Path
+          image = Path(sys.argv[1])
+          size = image.stat().st_size
+          if size == 0 or size > 0x10000000 or size % 1024:
+              raise SystemExit(f"invalid final image size/alignment: {size}")
+          with image.open("rb") as stream:
+              if stream.read(6) != b"NAOMI ":
+                  raise SystemExit("final image does not have a Naomi ROM signature")
+          print(f"Validated self-contained Naomi NetDIMM image: {size} bytes")
+          PY
+
+      - name: Encrypt final image for private delivery
+        env:
+          NAOMI_ARTIFACT_PASSWORD: \${{ secrets.NAOMI_ARTIFACT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/private-release
+          mapfile -t IMAGES < <(find build/naomi-game/bin -maxdepth 1 -type f -name '*.naomi.bin' -print)
+          test "\${#IMAGES[@]}" -eq 1
+          python3 platform/naomi/tools/secure_artifact.py \
+            --encrypt "\${IMAGES[0]}" \
+            --output build/private-release/daytona-naomi-netdimm.bin.enc
+          cp platform/naomi/tools/secure_artifact.py build/private-release/
+          cat > build/private-release/README.txt <<'EOF'
+          Daytona USA Naomi NetDIMM image (encrypted)
+
+          1. Install Python 3 and the cryptography package:
+             python -m pip install cryptography
+          2. Run:
+             python secure_artifact.py --decrypt daytona-naomi-netdimm.bin.enc --output daytona-naomi-netdimm.bin
+          3. Enter the NAOMI_ARTIFACT_PASSWORD you saved in your GitHub repository secrets.
+
+          The decrypted .bin is the self-contained NetDIMM image for your existing uploader.
+          EOF
+          unset NAOMI_ARTIFACT_PASSWORD
+
+      - name: Upload encrypted NetDIMM image
+        uses: actions/upload-artifact@v4
+        with:
+          name: daytona-naomi-netdimm-encrypted
+          path: build/private-release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+      - name: Build summary
+        run: |
+          {
+            echo "## Naomi NetDIMM build completed"
+            echo
+            echo "The self-contained image was generated and uploaded encrypted."
+            echo "The public repository artifact does not contain the plaintext ROM-derived game image."
+            echo "Download artifact: daytona-naomi-netdimm-encrypted (expires in 3 days)."
+          } >> "$GITHUB_STEP_SUMMARY"
