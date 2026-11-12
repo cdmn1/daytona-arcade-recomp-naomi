@@ -16,13 +16,7 @@ static struct {
 
 static const char *card_line(void) {
 #if defined(_arch_sub_naomi)
-    const nm_game_save_status_t s=nm_game_save_status();
-    if(s.last==NM_SAVE_OK) return "EEPROM SAVED; CONTROLS TEMP; SRAM PENDING";
-    if(s.last==NM_SAVE_DAMAGED) return "NAOMI EEPROM: INVALID, NOT OVERWRITTEN";
-    if(s.last==NM_SAVE_IO_ERROR) return "NAOMI EEPROM: READ/WRITE FAILED";
-    if(s.boot==NM_SAVE_OK) return "EEPROM LOADED; CONTROLS TEMP; SRAM PENDING";
-    if(s.boot==NM_SAVE_DAMAGED) return "NAOMI EEPROM: INVALID; FACTORY SETTINGS IN USE";
-    return "NAOMI EEPROM: UNAVAILABLE; SETTINGS NOT PERSISTED";
+    return "NAOMI: SETTINGS SESSION ONLY; EEPROM/SRAM BACKEND PENDING";
 #else
     const nm_game_save_status_t s=nm_game_save_status();
     if(s.busy) return "VMU: SAVING...";
@@ -63,7 +57,7 @@ static void render(void *unused) {
     enj_qfont_color_set(160,160,160);
     enj_qfont_write(card_line(),96,330,PVR_LIST_PT_POLY);
     enj_qfont_write("UP/DOWN SELECT  LEFT/RIGHT CHANGE",96,380,PVR_LIST_PT_POLY);
-    enj_qfont_write("START SAVE AND EXIT  B CANCEL",96,404,PVR_LIST_PT_POLY);
+    enj_qfont_write("START APPLY AND EXIT  B CANCEL",96,404,PVR_LIST_PT_POLY);
     enj_qfont_color_set(255,255,255);
 }
 
@@ -107,12 +101,14 @@ static void update(void *unused) {
                 screen.settings.reset_with_p1_d!=nm_game_settings()->reset_with_p1_d || screen.clear==2;
             nm_game_settings_set(&screen.settings);
             if(screen.clear==2) nm_game_records_clear();
+#if !defined(_arch_sub_naomi)
             if(changed) nm_game_save_request();
+#endif
             printf("Native settings: difficulty %s, advertise sound %s%s%s\n",
                 nm_settings_difficulty_name(screen.settings.difficulty),nm_settings_advertise_name(screen.settings.advertise_sound),
                 screen.clear==2 ? ", records cleared" : "",changed ?
 #if defined(_arch_sub_naomi)
-                ", EEPROM save requested; controls temporary" : ", unchanged");
+                ", runtime only (not persistent)" : ", unchanged");
 #else
                 ", saving" : ", unchanged");
 #endif
