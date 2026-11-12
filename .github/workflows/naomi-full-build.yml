@@ -84,7 +84,7 @@ jobs:
         env:
           KOS_BASE: ${{ github.workspace }}/KallistiOS
         run: |
-          set -euo pipefail
+          set -eo pipefail
           mkdir -p "$GITHUB_WORKSPACE/kos-ports/include" \
                    "$GITHUB_WORKSPACE/kos-ports/lib"
           cat > "$KOS_BASE/environ.sh" <<'EOF'
