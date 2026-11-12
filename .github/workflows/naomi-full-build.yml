@@ -207,6 +207,11 @@ jobs:
           set -eo pipefail
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
+          # Build and expose KOS's pvrtex host utility; enDjinn's workstation PATH is not available on CI.
+          mkdir -p "$DC_TOOLS_BASE"
+          make -C "$KOS_BASE/utils/pvrtex" -j2
+          make -C "$KOS_BASE/utils/pvrtex" install
+          export PATH="$DC_TOOLS_BASE:$PATH"
           # enDjinn defaults to its developer workstation KOS path; use this runner's KOS checkout.
           sed -i 's|^source /opt/toolchains/dc/kos/environ.sh$|source "$KOS_BASE/environ.sh"|' extern/endjinn/environ.sh
           zsh platform/dreamcast-native/recipes/build_assets.sh \
