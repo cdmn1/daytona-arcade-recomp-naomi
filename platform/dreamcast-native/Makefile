@@ -17,6 +17,8 @@ $(ENJ_BUILDDIR)/naomi/%.o: ../naomi/code/%.c $(ENJ_MAKEFILE)
 	$(ENJ_CC) $(ENJ_INCLUDES) $(ENJ_CFLAGS) $(DEFINES) $(ENJ_DEPFLAGS) -c $< -o $@
 
 NAOMIBINTOOL := $(KOS_BASE)/utils/naomibintool/naomibintool
+NAOMI_VERSION ?= $(shell tr -d '\\r\\n' < ../../VERSION)
+NAOMI_TITLE ?= Daytona USA Recomp v$(NAOMI_VERSION)
 NAOMI_BASE_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-base.bin
 NAOMI_ROMFS := $(ENJ_BINDIR)/$(ENJ_BASENAME).romfs
 NAOMI_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi.bin
@@ -32,7 +34,9 @@ $(NAOMI_ROMFS): FORCE_NAOMI_ROMFS $(ENJ_ASSETS) | $(ROMBASEPATH)
 
 $(NAOMI_BASE_BIN): $(ENJ_BINDIR)/$(ENJ_BASENAME).elf $(NAOMIBINTOOL)
 	@mkdir -p $(dir $@)
-	$(NAOMIBINTOOL) build $@ -d "CDMN" -t "Daytona USA Recompiled" -e $<
+	@test -n "$(NAOMI_VERSION)" || { echo "Missing VERSION file"; exit 1; }
+	@test $(printf '%s' "$(NAOMI_TITLE)" | wc -c) -le 32 || { echo "Naomi title exceeds 32 bytes: $(NAOMI_TITLE)"; exit 1; }
+	$(NAOMIBINTOOL) build $@ -d "CDMN" -t "$(NAOMI_TITLE)" -e $<
 
 $(NAOMI_BIN): $(NAOMI_BASE_BIN) $(NAOMI_ROMFS)
 	python3 ../naomi/tools/append_romfs.py $< $(NAOMI_ROMFS) $@
