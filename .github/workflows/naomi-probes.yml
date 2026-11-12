@@ -94,6 +94,20 @@ jobs:
           EOF
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
+          # KOS normally disables MIE on retail Dreamcasts. Naomi hardware
+          # can report the retail system-mode value in Flycast, so allow the
+          # MIE driver on Naomi builds only.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("kernel/arch/dreamcast/hardware/maple/mie/mie.c")
+          s = p.read_text()
+          old = "if(hardware_sys_mode(NULL) == HW_TYPE_RETAIL) {"
+          new = "#if !defined(_arch_sub_naomi)\\n    " + old + "\\n#endif"
+          count = s.count(old)
+          if count != 2:
+              raise SystemExit(f"Expected exactly 2 retail guards in mie.c, found {count}")
+          p.write_text(s.replace(old, new))
+          PY
           make -C "$KOS_BASE" -j2
           make -C "$GITHUB_WORKSPACE/platform/naomi/tests/input_probe" clean rom
 
@@ -103,4 +117,4 @@ jobs:
           name: naomi-netdimm-probes
           if-no-files-found: error
           path: |
-            platform/naomi/tests/input_probe/naomi_input_probe_v4.bin
+            platform/naomi/tests/input_probe/naomi_input_probe_v5.bin
