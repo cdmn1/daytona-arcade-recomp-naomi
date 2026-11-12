@@ -7,6 +7,7 @@
 #include <kos.h>
 #include <kos/init.h>
 #include <kos/dbgio.h>
+#include <arch/arch.h>
 #include <dc/fb_console.h>
 #include <dc/video.h>
 #include <dc/maple.h>
@@ -36,6 +37,7 @@ int main(void) {
 
     for(;;) {
         int found_mie = 0;
+        int sys_type, region;
         int i;
         maple_device_t *dev;
 
@@ -44,7 +46,8 @@ int main(void) {
 #if defined(_arch_sub_naomi)
         printf("Port A mode: %s\n",
                mie_port0_mode() == MIE_PORT0_JVS ? "JVS" :
-               mie_port0_mode() == MIE_PORT0_MAPLE ? "Maple" : "unknown");
+               (sys_type == HW_TYPE_RETAIL ? "Maple (retail-mode override)" :
+                mie_port0_mode() == MIE_PORT0_MAPLE ? "Maple" : "unknown"));
         dev = maple_enum_dev(0, 0);
         if(dev) {
             printf("Port A unit 0: %s\n",
