@@ -188,9 +188,9 @@ static void test_store(void) {
     f->size=1024;
     t=defaults;assert(nm_save_store_load(&fake,&t)==NM_SAVE_DAMAGED && !memcmp(&t,&defaults,sizeof(t)));
     f->size=2560;
-    f->data[640+4]=2;
+    f->data[640+4]=3;
     t=defaults;assert(nm_save_store_load(&fake,&t)==NM_SAVE_DAMAGED);
-    f->data[640+4]=1;
+    f->data[640+4]=2;
     t=defaults;assert(nm_save_store_load(&fake,&t)==NM_SAVE_OK);
     /* Read and write faults. */
     card.read_fault=1;t=defaults;assert(nm_save_store_load(&fake,&t)==NM_SAVE_IO_ERROR && !memcmp(&t,&defaults,sizeof(t)));
