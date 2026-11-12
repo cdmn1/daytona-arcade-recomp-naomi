@@ -209,7 +209,44 @@ jobs:
       - name: Fetch pinned Daytona host-build dependencies
         run: python3 scripts/setup.py --no-build
 
+      - name: Restore generated Daytona asset cache
+        id: asset-cache
+        uses: actions/cache@v4
+        with:
+          path: build/naomi-assets
+          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', 'platform/naomi/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
+          save-always: true
+
+      - name: Pre-flight Naomi build checks
+        env:
+          KOS_BASE: ${{ github.workspace }}/KallistiOS
+        run: |
+          set -euo pipefail
+          export KOS_SUBARCH=naomi
+          . "$KOS_BASE/environ.sh"
+          command -v sh-elf-gcc >/dev/null
+          command -v sh-elf-ld >/dev/null
+          test -x "$KOS_BASE/utils/pvrtex/pvrtex" || {
+            make -C "$KOS_BASE/utils/pvrtex" -j2
+          }
+          mkdir -p "$DC_TOOLS_BASE"
+          make -C "$KOS_BASE/utils/pvrtex" install
+          export PATH="$DC_TOOLS_BASE:$PATH"
+          test -x "$DC_TOOLS_BASE/pvrtex"
+          grep -q '#include <sh4zam/shz_sh4zam.h>' platform/dreamcast-native/code/render/ui/result_render.c
+          find extern -path '*/sh4zam/shz_sh4zam.h' -print -quit | grep -q .
+          test -f platform/dreamcast-native/recipes/build_assets.sh
+          test -f platform/naomi/tools/append_romfs.py
+          test -f platform/naomi/tools/romfsgen.py
+          if [ "${{ steps.asset-cache.outputs.cache-hit }}" = "true" ]; then
+            test -s build/naomi-assets/make-vars.txt
+            echo "Pre-flight passed; compatible generated assets restored from cache."
+          else
+            echo "Pre-flight passed; asset generation is required."
+          fi
+
       - name: Generate complete Daytona assets
+        if: steps.asset-cache.outputs.cache-hit != 'true'
         env:
           KOS_BASE: ${{ github.workspace }}/KallistiOS
           CC: clang
@@ -218,10 +255,7 @@ jobs:
           set -eo pipefail
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
-          # Build and expose KOS's pvrtex host utility; enDjinn's workstation PATH is not available on CI.
-          mkdir -p "$DC_TOOLS_BASE"
-          make -C "$KOS_BASE/utils/pvrtex" -j2
-          make -C "$KOS_BASE/utils/pvrtex" install
+          # pvrtex is built and checked in the pre-flight step above.
           export PATH="$DC_TOOLS_BASE:$PATH"
           # enDjinn defaults to its developer workstation KOS path; use this runner's KOS checkout.
           sed -i 's|^source /opt/toolchains/dc/kos/environ.sh$|source "$KOS_BASE/environ.sh"|' extern/endjinn/environ.sh
