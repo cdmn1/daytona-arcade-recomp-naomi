@@ -1,5 +1,6 @@
 #ifndef NAOMI_HOST_STUB_KOS_INIT_H
 #define NAOMI_HOST_STUB_KOS_INIT_H
 #define INIT_DEFAULT 0
+#define INIT_MIE 0
 #define KOS_INIT_FLAGS(flags)
 #endif
