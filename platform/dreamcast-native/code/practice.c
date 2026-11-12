@@ -944,7 +944,7 @@ static void practice_update(void *unused) {
         }
         /* P1 D/4 is the observed session-reset input. It is independent of B/2, which is the digital brake.
          * The operator can disable reset in Game Test; START+B remains the inspector chord. */
-        if (!practice.attract_active && nm_game_settings()->reset_with_p1_b==NM_RESET_BUTTON_ON &&
+        if (!practice.attract_active && nm_game_settings()->reset_with_p1_d==NM_RESET_BUTTON_ON &&
             c->button.D == ENJ_BUTTON_DOWN_THIS_FRAME && !(c->button.START&1)) {
             practice.failed = !practice_reset_session(NULL);
             if(!practice.failed) practice.failed=!practice_race_detail();
