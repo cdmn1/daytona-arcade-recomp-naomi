@@ -192,7 +192,7 @@ void nm_game_records_clear(void) {
 void nm_game_save_request(void) {
 #if defined(_arch_sub_naomi)
     status.last=naomi_settings_write(&live.settings);
-    printf("Naomi I/O-board EEPROM: %s\\n",nm_save_result_name(status.last));
+    printf("Naomi I/O-board EEPROM: %s\n",nm_save_result_name(status.last));
     return;
 #else
     if(!use_card) return;
