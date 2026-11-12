@@ -8,6 +8,7 @@
 #include <string.h>
 #include <kos.h>
 #include <kos/init.h>
+#include <kos/dbgio.h>
 
 #include "naomi_cart.h"
 #include "naomi_romfs.h"
@@ -28,6 +29,9 @@ int main(void) {
     static uint32_t header_words[NAOMI_HEADER_SIZE / sizeof(uint32_t)];
     uint8_t *header = (uint8_t *)header_words;
     char payload[80];
+
+    /* Naomi's KOS framebuffer console uses the built-in minifont. */
+    dbgio_dev_select("fb");
 
     puts("Daytona Naomi ROM-board / NetDIMM probe");
 #if defined(_arch_sub_naomi)
