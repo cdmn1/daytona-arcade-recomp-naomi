@@ -69,7 +69,7 @@ size_t nm_save_encode(const nm_save_t *save,uint8_t out[NM_SAVE_PAYLOAD_BYTES]) 
     nm_memcpy(out,payload_magic,4);
     put16(out+4,NM_SAVE_PAYLOAD_VERSION);put16(out+6,NM_SAVE_PAYLOAD_BYTES);
     out[8]=save->settings.difficulty;out[9]=save->settings.advertise_sound;
-    out[10]=save->settings.control_scheme;out[11]=save->settings.reset_with_p1_b;
+    out[10]=save->settings.control_scheme;out[11]=save->settings.reset_with_p1_d;
     nm_memcpy(out+12,save->selected,NM_SAVE_TABLES);
     uint8_t *p=out+PAYLOAD_RECORDS;
     for(unsigned t=0;t<NM_SAVE_TABLES;++t) for(unsigned i=0;i<NM_SAVE_SLOTS;++i,p+=24) {
@@ -95,7 +95,7 @@ int nm_save_decode(const uint8_t *in,size_t size,nm_save_t *save) {
     } else {
         if(in[15]) return 0;
         s.settings=(nm_settings_t){.difficulty=in[8],.advertise_sound=in[9],
-            .control_scheme=in[10],.reset_with_p1_b=in[11]};
+            .control_scheme=in[10],.reset_with_p1_d=in[11]};
         nm_memcpy(s.selected,in+12,NM_SAVE_TABLES);
     }
     nm_memset(s.zero,0,sizeof(s.zero));
