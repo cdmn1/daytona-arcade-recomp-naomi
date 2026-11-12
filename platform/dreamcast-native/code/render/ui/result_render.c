@@ -4,6 +4,7 @@
 #include "lighting.h"
 #include "scene_loader.h"
 #include <enDjinn/enj_enDjinn.h>
+#include <sh4zam/shz_sh4zam.h>
 #include "nm_mem.h"
 
 static nm_pack_t pack;
