@@ -871,7 +871,7 @@ def main():
         draw = ImageDraw.Draw(image)
         for polygon, colour in zip(local, colours):
             draw.polygon([((v[0]-left)*scale-0.5, (v[1]-top)*scale-0.5) for v in polygon], fill=colour+(255,))
-        pixels = [(0xff000000 | r << 16 | g << 8 | b) if a else 0 for r, g, b, a in image.get_flattened_data()]
+        pixels = [(0xff000000 | r << 16 | g << 8 | b) if a else 0 for r, g, b, a in image.getdata()]
         sprites[name] = dict(width=width*scale, height=height*scale, pixels=pixels, scale=scale, origin=(left, top))
     leader_local, _ = marker_sprite('MARKER_LEADER', 24, 6, ('lx', 'lz', 'lyaw'))
     player_local, _ = marker_sprite('MARKER_PLAYER', 30, 13, ('x', 'z', 'yaw'))
@@ -997,7 +997,7 @@ def main():
         for polygon, colour_word in zip(local, words):
             draw.polygon([((v[0]-left)*RADAR_SCALE-0.5, (v[1]-top)*RADAR_SCALE-0.5) for v in polygon],
                          fill=radar_colours[colour_word]+(255,))
-        pixels = [(0xff000000 | r << 16 | g << 8 | b) if a else 0 for r, g, b, a in image.get_flattened_data()]
+        pixels = [(0xff000000 | r << 16 | g << 8 | b) if a else 0 for r, g, b, a in image.getdata()]
         sprites[name] = dict(width=width*RADAR_SCALE, height=height*RADAR_SCALE, pixels=pixels, scale=RADAR_SCALE,
                              origin=(left, top))
     # The panel: a stipple (texheader 8000) of one colour on every other pixel; on the Dreamcast one
@@ -1028,7 +1028,7 @@ def main():
     for polygon in track:
         draw.polygon([(v[0]-left-0.5, v[1]-top-0.5) for v in polygon], fill=map_colour+(255,))
     sprites['MAP'] = dict(width=width, height=height, scale=1,
-                          pixels=[(0xff000000 | r << 16 | g << 8 | b) if a else 0 for r, g, b, a in image.get_flattened_data()])
+                          pixels=[(0xff000000 | r << 16 | g << 8 | b) if a else 0 for r, g, b, a in image.getdata()])
     layout['MAP'] = (left, top)
     # Other courses' maps (--course-map): the same flat sprite, with their own marker matrices.
     course_maps = {}
@@ -1047,7 +1047,7 @@ def main():
         for polygon in other['track']:
             draw.polygon([(v[0]-left2-0.5, v[1]-top2-0.5) for v in polygon], fill=other['colour']+(255,))
         sprites[f'MAP_C{slot}'] = dict(width=width2, height=height2, scale=1,
-                                       pixels=[(0xff000000 | r << 16 | g << 8 | b) if a else 0 for r, g, b, a in image.get_flattened_data()])
+                                       pixels=[(0xff000000 | r << 16 | g << 8 | b) if a else 0 for r, g, b, a in image.getdata()])
         layout[f'MAP_C{slot}'] = (left2, top2)
         course_maps[slot] = other
 
