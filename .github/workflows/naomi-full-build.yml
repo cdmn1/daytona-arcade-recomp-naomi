@@ -211,17 +211,16 @@ jobs:
 
       - name: Restore generated Daytona asset cache
         id: asset-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: build/naomi-assets
           key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', 'platform/naomi/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
-          save-always: true
 
       - name: Pre-flight Naomi build checks
         env:
           KOS_BASE: ${{ github.workspace }}/KallistiOS
         run: |
-          set -euo pipefail
+          set -eo pipefail
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
           command -v sh-elf-gcc >/dev/null
@@ -262,6 +261,13 @@ jobs:
           zsh platform/dreamcast-native/recipes/build_assets.sh \
             input/daytona93-complete.zip build/naomi-assets \
             --music input/daytona-music.zip --jobs 2
+
+      - name: Save generated Daytona asset cache
+        if: steps.asset-cache.outputs.cache-hit != 'true' && success()
+        uses: actions/cache/save@v4
+        with:
+          path: build/naomi-assets
+          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', 'platform/naomi/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
 
       - name: Compile Naomi game and append resident ROMFS
         env:
