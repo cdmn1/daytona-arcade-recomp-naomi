@@ -236,6 +236,8 @@ jobs:
         with:
           path: build/naomi-assets
           key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
+          restore-keys: |
+            naomi-assets-${{ runner.os }}-84ae89330a378195949a673ce19a7230123867f0d1c868adcbf595831cc1bead-7f52d06d5d1b2a2ccba88c7f32abbc830b0cdaed9bce238d627adb9667df64af
 
       - name: Pre-flight Naomi build checks
         env:
