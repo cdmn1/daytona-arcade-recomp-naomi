@@ -178,22 +178,28 @@ jobs:
               for info in first.infolist():
                   if info.is_dir():
                       continue
-                  merged.writestr(info, first.read(info.filename))
-                  base_names.add(Path(info.filename).name)
-              for wanted in required:
-                  if wanted in base_names:
+                  name = Path(info.filename).name
+                  merged.writestr(name, first.read(info.filename))
+                  base_names.add(name)
+              # daytona93 is a merged MAME clone set: parent-set ROMs are
+              # intentionally omitted from its ZIP. Import every missing parent
+              # ROM, not just the six sound-board ROMs.
+              added = []
+              for info in second.infolist():
+                  if info.is_dir():
                       continue
-                  matches = [item for item in second.infolist()
-                             if not item.is_dir() and Path(item.filename).name == wanted]
-                  if len(matches) != 1:
-                      raise SystemExit(f"expected exactly one {wanted} in supplementary daytona.zip; found {len(matches)}")
-                  merged.writestr(wanted, second.read(matches[0].filename))
+                  name = Path(info.filename).name
+                  if name in base_names:
+                      continue
+                  merged.writestr(name, second.read(info.filename))
+                  base_names.add(name)
+                  added.append(name)
           with ZipFile(output) as result:
               names = {Path(item).name for item in result.namelist()}
               missing = [name for name in required if name not in names]
               if missing:
                   raise SystemExit("merged ROM set is missing: " + ", ".join(missing))
-              print(f"Combined ROM archive is valid: {len(result.namelist())} files")
+              print(f"Combined ROM archive is valid: {len(result.namelist())} files; added {len(added)} parent-set files")
           PY
           echo "All private inputs downloaded and merged on the ephemeral runner."
 
