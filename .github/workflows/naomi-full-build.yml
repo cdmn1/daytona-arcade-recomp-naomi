@@ -260,7 +260,7 @@ jobs:
           test -f platform/dreamcast-native/recipes/build_assets.sh
           test -f platform/naomi/tools/append_romfs.py
           test -f platform/naomi/tools/romfsgen.py
-          if [ "${{ steps.asset-cache.outputs.cache-hit }}" = "true" ]; then
+          if [ -n "${{ steps.asset-cache.outputs.cache-matched-key }}" ]; then
             test -s build/naomi-assets/make-vars.txt
             echo "Pre-flight passed; compatible generated assets restored from cache."
           else
@@ -268,7 +268,7 @@ jobs:
           fi
 
       - name: Generate complete Daytona assets
-        if: steps.asset-cache.outputs.cache-hit != 'true'
+        if: steps.asset-cache.outputs.cache-matched-key == ''
         env:
           KOS_BASE: ${{ github.workspace }}/KallistiOS
           CC: clang
