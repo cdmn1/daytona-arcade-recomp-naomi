@@ -35,7 +35,7 @@ $(NAOMI_ROMFS): FORCE_NAOMI_ROMFS $(ENJ_ASSETS) | $(ROMBASEPATH)
 $(NAOMI_BASE_BIN): $(ENJ_BINDIR)/$(ENJ_BASENAME).elf $(NAOMIBINTOOL)
 	@mkdir -p $(dir $@)
 	@test -n "$(NAOMI_VERSION)" || { echo "Missing VERSION file"; exit 1; }
-	@test $(printf '%s' "$(NAOMI_TITLE)" | wc -c) -le 32 || { echo "Naomi title exceeds 32 bytes: $(NAOMI_TITLE)"; exit 1; }
+	@test "$(printf '%s' "$(NAOMI_TITLE)" | wc -c)" -le 32 || { echo "Naomi title exceeds 32 bytes: $(NAOMI_TITLE)"; exit 1; }
 	$(NAOMIBINTOOL) build $@ -d "CDMN" -t "$(NAOMI_TITLE)" -e $<
 
 $(NAOMI_BIN): $(NAOMI_BASE_BIN) $(NAOMI_ROMFS)
