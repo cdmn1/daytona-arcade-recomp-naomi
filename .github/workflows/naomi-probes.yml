@@ -103,17 +103,19 @@ jobs:
           p = Path(os.environ["KOS_BASE"]) / "kernel/arch/dreamcast/hardware/maple/mie/mie.c"
           s = p.read_text()
           old = "if(hardware_sys_mode(NULL) == HW_TYPE_RETAIL) {"
-          for function in ("bool mie_init_fw(", "void mie_init(void)"):
+          functions = (
+              ("bool mie_init_fw(", "void mie_init(void)"),
+              ("void mie_init(void)", "void mie_shutdown(void)"),
+          )
+          for function, next_function in functions:
               start = s.find(function)
-              if start < 0:
-                  raise SystemExit(f"Could not find {function}")
-              end = s.find("\n}", start)
-              if end < 0:
-                  raise SystemExit(f"Could not find end of {function}")
+              end = s.find(next_function, start + len(function))
+              if start < 0 or end < 0:
+                  raise SystemExit(f"Could not delimit {function}")
               body = s[start:end]
               if body.count(old) != 1:
                   raise SystemExit(f"Expected one retail guard in {function}")
-              s = s[:start] + body.replace(old, "#if !defined(_arch_sub_naomi)\n    " + old + "\n#endif") + s[end:]
+              s = s[:start] + body.replace(old, "#if !defined(_arch_sub_naomi)\\n    " + old + "\\n#endif") + s[end:]
           p.write_text(s)
           PY
           make -C "$KOS_BASE" -j2
