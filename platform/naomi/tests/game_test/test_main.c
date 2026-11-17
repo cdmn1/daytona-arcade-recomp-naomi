@@ -92,9 +92,21 @@ static int save_now(void) {
     uint8_t file[NM_SAVE_FILE_BYTES];
     uint8_t scratch[NM_SAVE_FILE_BLOCKS * 512u];
     const nm_save_device_t *device=nm_naomi_save_device();
-    eeprom_warning=!nm_naomi_eeprom_store_settings(&save.settings);
+    const int eeprom_ok=nm_naomi_eeprom_store_settings(&save.settings);
+    eeprom_warning=!eeprom_ok;
     if(nm_save_file_build(&save,file)!=NM_SAVE_FILE_BYTES) return 0;
-    return nm_save_store_write(device,file,NULL,0,&save.settings,0,scratch)==NM_SAVE_OK;
+    const int sram_ok=nm_save_store_write(device,file,NULL,0,&save.settings,0,scratch)==NM_SAVE_OK;
+    if(!sram_ok) return 0;
+    if(eeprom_ok) return 1;
+
+    /* If another title owns the EEPROM game block, SRAM is our safe fallback.
+     * If our own block exists but still contains old settings, do not leave
+     * Game Test: the main game would correctly prefer that stale EEPROM copy. */
+    nm_settings_t persisted;
+    if(nm_naomi_eeprom_load_settings(&persisted) &&
+       memcmp(&persisted,&save.settings,sizeof(persisted))!=0)
+        return 0;
+    return 1;
 }
 
 static void change_assignment(unsigned item) {
