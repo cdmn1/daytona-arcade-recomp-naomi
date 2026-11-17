@@ -11,6 +11,7 @@ on:
       - "platform/dreamcast-native/local.cfg.mk"
       - "platform/dreamcast-native/code/practice.c"
       - "platform/dreamcast-native/code/save/game_save.c"
+      - "platform/dreamcast-native/scripts/fetch_endjinn.sh"
 
 permissions:
   contents: read

@@ -8,8 +8,8 @@ ENDJINN_COMMIT=725f8b192c18ba56298eca1b5eaf8abc216e67be
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd -P)"
 DEST="$ROOT/extern/endjinn"
 [ -d "$DEST/.git" ] || git clone https://github.com/dfchil/enDjinn.git "$DEST"
-git -C "$DEST" fetch origin 2>/dev/null || true
-git -C "$DEST" checkout --detach "$ENDJINN_COMMIT"
+git -C "$DEST" fetch --depth 1 origin "$ENDJINN_COMMIT"
+git -C "$DEST" checkout --detach FETCH_HEAD
 
 # Naomi: expose KOS's MIE/JVS mapped controller state through enDjinn's
 # existing normalized controller slots. Keep the patch in this repository.
