@@ -293,6 +293,9 @@ jobs:
       - name: Test Naomi ROMFS tooling
         run: python3 platform/naomi/tests/test_romfs_tools.py
 
+      - name: Test Naomi Game Test ROM packaging
+        run: python3 platform/naomi/tests/game_test/test_combine_naomi_test_rom.py
+
       - name: Fetch pinned Daytona host-build dependencies
         run: python3 scripts/setup.py --no-build
 
