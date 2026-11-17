@@ -94,7 +94,7 @@ static int save_now(void) {
     const nm_save_device_t *device=nm_naomi_save_device();
     eeprom_warning=!nm_naomi_eeprom_store_settings(&save.settings);
     if(nm_save_file_build(&save,file)!=NM_SAVE_FILE_BYTES) return 0;
-    return nm_save_store_write(device,file,NULL,0,NULL,0,0,scratch)==NM_SAVE_OK;
+    return nm_save_store_write(device,file,NULL,0,&save.settings,0,scratch)==NM_SAVE_OK;
 }
 
 static void change_assignment(unsigned item) {
@@ -190,8 +190,6 @@ int main(int argc,char **argv) {
     font_tex=pvr_mem_malloc(256*256*2);
     if(!font_tex) for(;;) thd_sleep(1000);
     font_init();
-    maple_wait_scan();
-
     maple_wait_scan();
     mie_state_t *initial=mie_status();
     /* BIOS may launch GAME TEST while the cabinet TEST switch is still held.
