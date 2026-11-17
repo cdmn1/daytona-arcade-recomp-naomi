@@ -892,6 +892,21 @@ static void practice_update(void *unused) {
         native_mie=(mie_state_t *)maple_dev_status(mie_dev);
         if(native_mie) break;
     }
+    const int test_active=native_mie &&
+        (native_mie->jvs.panel.psw.test || native_mie->jvs.system.test);
+    /* Ignore TEST if it was already held when the game first sampled JVS. */
+    if(!practice_test_armed) {
+        practice_test_latched=test_active;
+        practice_test_armed=1;
+    }
+    if(!test_active) practice_test_latched=0;
+    if(test_active && !practice_test_latched) {
+        practice_test_latched=1;
+        /* Let KOS shut down fully; the Naomi-only arch_menu hook then enters
+         * the BIOS System Test Menu, where GAME TEST MODE launches our test ELF. */
+        arch_set_exit_path(ARCH_EXIT_MENU);
+        exit(0);
+    }
 #endif
     enj_ctrlr_state_t **controllers = enj_ctrl_get_states();
     for (size_t i=0; i<enj_ctrl_states_length(); ++i) if (controllers[i]) {
@@ -907,28 +922,9 @@ static void practice_update(void *unused) {
         controls = nm_controls_decode(nm_steer_table_adc(practice_steer_table,steer_axis),
             accel_axis,brake_axis,practice.controller_last.accel,practice.controller_last.brake);
         ++practice.controller_samples;practice.controller_last=controls;
-#if defined(_arch_sub_naomi)
-        const int test_active=native_mie &&
-            (native_mie->jvs.panel.psw.test || native_mie->jvs.system.test);
-        /* Ignore TEST if it was already held when the game first sampled JVS. */
-        if(!practice_test_armed) {
-            practice_test_latched=test_active;
-            practice_test_armed=1;
-        }
-        if(!test_active) practice_test_latched=0;
-        if(test_active && !practice_test_latched) {
-            practice_test_latched=1;
-            /* Let KOS shut down fully; the Naomi-only arch_menu hook then enters
-             * the BIOS System Test Menu, where GAME TEST MODE launches our test ELF. */
-            arch_set_exit_path(ARCH_EXIT_MENU);
-            exit(0);
-        }
-#endif
         if(practice.attract_active && !practice.podium.phase &&
            (c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME || c->button.A==ENJ_BUTTON_DOWN_THIS_FRAME)) {
-            /* Both triggers and START: the settings screen; else the credit (1108 -> 2818), taken by the next
-             * cinematic tick (gameplay/select_mode.h). */
-            if(nm_select_attract_button(c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME,c->ltrigger,c->rtrigger)) return;
+            /* START/A takes a credit; operator settings are entered only with the cabinet TEST switch. */
             practice_credit_pending=1;
         }
         /* The race, the podium and the results (the attract's START is the credit above).
