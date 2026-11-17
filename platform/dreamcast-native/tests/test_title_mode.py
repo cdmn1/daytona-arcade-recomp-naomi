@@ -1,5 +1,5 @@
 """Title mode (the original's phase 9) and the attract loop's entry (phase 2): queue title frames for 386 ticks,
-then phase 2; START or A is a credit (the select); both triggers and START the settings."""
+then phase 2; START or A is a credit (the select); Naomi TEST is handled by the BIOS hand-off."""
 from pathlib import Path
 import subprocess
 import tempfile
@@ -66,8 +66,6 @@ static int nm_practice_attract_preload(void) { ++preloads;return 1; }
 static int nm_practice_attract_loading(void) { return loading; }
 static void nm_practice_attract_settle(void) { ++settles_scene;loading=0; }
 static void nm_practice_attract_abandon(void) { nm_practice_attract_settle(); }
-static unsigned settings_starts;
-static int nm_settings_mode_start(void) { ++settings_starts;return 1; } /* gameplay/settings_mode.h */
 static enj_mode_t *active;
 static void enj_mode_set(enj_mode_t *mode) { active=mode; }
 static void enj_state_flag_shutdown(void *unused) { (void)unused;++shutdowns; }
@@ -100,13 +98,13 @@ int main(void) {
     assert(settles_scene==3 && !loading && restarts==3 && releases==5);
     assert(preloads==5);
     settings.advertise_sound=NM_ADVERTISE_OFF;assert(nm_attract_mode_start() && adverts==3 && fades==1);
-    /* Both triggers and START: the settings screen, not the select; one trigger is a credit. */
+    /* Naomi TEST is no longer intercepted by a custom title menu; START remains a credit. */
     assert(nm_title_mode_start());now_us=1;active->mode_updater(NULL);
     controller.button.START=ENJ_BUTTON_DOWN_THIS_FRAME;controller.ltrigger=255;controller.rtrigger=200;
-    active->mode_updater(NULL);assert(settings_starts==1 && restarts==3);
-    assert(nm_title_mode_start());controller.rtrigger=0;active->mode_updater(NULL);assert(settings_starts==1 && restarts==4);
+    active->mode_updater(NULL);assert(restarts==4 && !shutdowns);
+    assert(nm_title_mode_start());controller.rtrigger=0;active->mode_updater(NULL);assert(restarts==5 && !shutdowns);
     controller.button.START=0;controller.ltrigger=0;
-    puts("PASS: title (phase 9) 386 ticks then phase 2 with its music; START/A start the select; triggers+START open the settings; the attract's load in its frames, the title on while it loads");
+    puts("PASS: title (phase 9) 386 ticks then phase 2 with its music; START/A start the select; Naomi TEST is left to the BIOS hand-off; the attract's load in its frames, the title on while it loads");
 }
 '''
 with tempfile.TemporaryDirectory() as directory:
