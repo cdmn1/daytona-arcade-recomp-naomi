@@ -134,6 +134,40 @@ need real Naomi KOS compilation plus Flycast and hardware validation.
 Do not silently fall back to
 `/pc/`, `/cd/`, network filesystems, or a host-mounted directory.
 
+## Naomi Game Test mode and saves
+
+The full game ROM now carries two independent executable entries:
+- the normal Daytona game entry;
+- a separately linked Daytona GAME TEST MODE entry in the Naomi ROM header's test segment.
+
+The test program is built in `tests/game_test/` and combined with the normal ROM by
+`combine_naomi_test_rom.py`. It provides INPUT TEST, GAME ASSIGNMENTS,
+BOOKKEEPING, BACKUP DATA CLEAR and EXIT. The four native settings
+(difficulty, attract sound, ANALOG/DIGITAL and P1 D/4 reset) are saved with
+the records in this port's battery-backed Naomi SRAM save area.
+
+The SRAM allocation is `0xA0206000-0xA0207FFF` (physical offset
+`0x6000-0x7FFF`), matching the established native Daytona port's reserved
+window. The save uses the existing validated VMS save-file format, a
+`DTN1` header and checksum, and writes the validity marker last. It does not
+overwrite the other known SRAM allocations (Cannonball at `0x0000-0x0FFF`
+or the recompiled Daytona NVRAM at `0x1000-0x5FFF`).
+
+On the running game, a fresh cabinet TEST press requests `ARCH_EXIT_MENU`.
+The Naomi KOS build patches `arch_menu()` so that, after normal KOS shutdown,
+it calls the Naomi 1 BIOS System Test Mode vector. Selecting GAME TEST MODE
+then starts the separate test executable; EXIT returns to the Naomi System
+Test Menu. A TEST switch already held at application startup is ignored until
+released and pressed again.
+
+The EEPROM is deliberately not rewritten by this initial implementation:
+the original Daytona Model 2 settings image documented by
+`tools/settings_eeprom.py` uses its own XMODEM format, which must not be
+confused with KOS's generic Naomi MIE EEPROM CRC/layout. The native port's
+settings and bookkeeping are currently persisted together in the dedicated
+battery-backed SRAM save area. A future MIE EEPROM integration must first
+identify and preserve the Naomi game-settings block format on the actual board.
+
 ## Current status
 
 - [x] Naomi KOS target and MIE/JVS API identified.
