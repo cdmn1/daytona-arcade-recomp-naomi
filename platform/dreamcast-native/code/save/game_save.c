@@ -56,7 +56,13 @@ static int vmu_write(void *context,void *card,const char *name,const uint8_t *da
     (void)context;return vmufs_write(card,name,(void *)data,(int)size,VMUFS_OVERWRITE);
 }
 static const nm_save_device_t vmu={NULL,vmu_find,vmu_free_blocks,vmu_file_blocks,vmu_read,vmu_release,vmu_write};
+#if defined(_arch_sub_naomi)
+#include "naomi_save.h"
+/* Naomi has no VMU: use this port's reserved battery-backed SRAM save area. */
+#define device (nm_naomi_save_device())
+#else
 static const nm_save_device_t *device=&vmu;
+#endif
 #else
 /* Hosts: no lock, the writer runs inside the request, and the card is whatever the test sets (none by default). */
 #define LOCK() ((void)0)
