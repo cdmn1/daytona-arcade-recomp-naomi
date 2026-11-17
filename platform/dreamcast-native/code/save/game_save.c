@@ -117,6 +117,10 @@ void nm_game_save_boot(const nm_race_record_seed_t seeds[NM_SAVE_TABLES][NM_SAVE
     queued=0;next_ready=next_replace=0;settings_sets=settings_written=0;
     status=(nm_game_save_status_t){.boot=use_card ? nm_save_store_load(device,&live) : NM_SAVE_NO_CARD,
         .last=NM_SAVE_NO_FILE};
+#if defined(_arch_sub_naomi)
+    /* Naomi's game-settings EEPROM is authoritative; records remain in SRAM. */
+    (void)nm_naomi_eeprom_load_settings(&live.settings);
+#endif
     printf("Native save: boot %s%s; difficulty %s, advertise sound %s\n",nm_save_result_name(status.boot),
         use_card ? "" : " (scripted: defaults, never written)",
         nm_settings_difficulty_name(live.settings.difficulty),nm_settings_advertise_name(live.settings.advertise_sound));

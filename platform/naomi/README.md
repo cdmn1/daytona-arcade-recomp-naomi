@@ -160,13 +160,14 @@ then starts the separate test executable; EXIT returns to the Naomi System
 Test Menu. A TEST switch already held at application startup is ignored until
 released and pressed again.
 
-The EEPROM is deliberately not rewritten by this initial implementation:
-the original Daytona Model 2 settings image documented by
-`tools/settings_eeprom.py` uses its own XMODEM format, which must not be
-confused with KOS's generic Naomi MIE EEPROM CRC/layout. The native port's
-settings and bookkeeping are currently persisted together in the dedicated
-battery-backed SRAM save area. A future MIE EEPROM integration must first
-identify and preserve the Naomi game-settings block format on the actual board.
+The native port's settings are stored in the Naomi MIE EEPROM game-settings
+block (bytes 44 onward, size at byte 39), using KOS's Naomi CRC helper. The
+block is tagged `DUSA` and versioned; an empty block or this port's own block
+may be updated, but an unknown title's block is never overwritten. Difficulty,
+advertise sound, control scheme and P1 D/4 reset are loaded from this EEPROM
+block at game boot. Race records are stored separately in the dedicated
+battery-backed SRAM save area. This is intentionally distinct from the
+Model 2 XMODEM image described by `tools/settings_eeprom.py`.
 
 ## Current status
 

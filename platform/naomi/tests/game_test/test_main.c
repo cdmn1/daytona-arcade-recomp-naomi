@@ -29,6 +29,7 @@ static pvr_ptr_t font_tex;
 static nm_save_t save;
 static int dirty;
 static int save_failed;
+static int eeprom_warning;
 
 enum { PAGE_MENU, PAGE_INPUT, PAGE_ASSIGN, PAGE_BOOKKEEPING, PAGE_CLEAR };
 enum { MENU_INPUT, MENU_ASSIGN, MENU_BOOKKEEPING, MENU_CLEAR, MENU_EXIT, MENU_COUNT };
@@ -91,6 +92,7 @@ static int save_now(void) {
     uint8_t file[NM_SAVE_FILE_BYTES];
     uint8_t scratch[NM_SAVE_FILE_BLOCKS * 512u];
     const nm_save_device_t *device=nm_naomi_save_device();
+    eeprom_warning=!nm_naomi_eeprom_store_settings(&save.settings);
     if(nm_save_file_build(&save,file)!=NM_SAVE_FILE_BYTES) return 0;
     return nm_save_store_write(device,file,NULL,0,NULL,0,0,scratch)==NM_SAVE_OK;
 }
@@ -120,7 +122,8 @@ static void render_menu(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
     snprintf(lines[8],LINE_BYTES,"DIFFICULTY: %s",nm_settings_difficulty_name(save.settings.difficulty));
     snprintf(lines[9],LINE_BYTES,"CONTROL: %s",nm_settings_control_name(save.settings.control_scheme));
     snprintf(lines[10],LINE_BYTES,"P1 D/4 RESET: %s",nm_settings_reset_name(save.settings.reset_with_p1_d));
-    snprintf(lines[11],LINE_BYTES,"%s",save_failed?"SAVE ERROR - CHECK SRAM":"EXIT RETURNS TO NAOMI SYSTEM MENU");
+    snprintf(lines[11],LINE_BYTES,"%s",save_failed?"SAVE ERROR - CHECK SRAM":
+        eeprom_warning?"EEPROM NOT UPDATED; SRAM SAVE IS ACTIVE":"EXIT RETURNS TO NAOMI SYSTEM MENU");
 }
 
 static void render_assign(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
@@ -135,7 +138,8 @@ static void render_assign(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) 
     snprintf(lines[8],LINE_BYTES," ");
     snprintf(lines[9],LINE_BYTES," ");
     snprintf(lines[10],LINE_BYTES," ");
-    snprintf(lines[11],LINE_BYTES,"%s",save_failed?"SAVE ERROR":" ");
+    snprintf(lines[11],LINE_BYTES,"%s",save_failed?"SRAM SAVE ERROR":
+        eeprom_warning?"EEPROM BLOCK IN USE; SETTINGS SAVED TO SRAM":" ");
 }
 
 static void render_input(char lines[LINE_COUNT][LINE_BYTES],mie_state_t *s) {

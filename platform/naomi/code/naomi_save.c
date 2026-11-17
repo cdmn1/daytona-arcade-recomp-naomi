@@ -7,6 +7,7 @@
 #include <string.h>
 #include "save_store.h"
 #include "naomi_save.h"
+#include <dc/maple/mie.h>
 
 #define SRAM_BASE ((volatile uint8_t *)0xA0206000u)
 #define SRAM_BYTES 0x2000u
@@ -105,6 +106,84 @@ static int sram_write(void *context, void *card, const char *name,
     SRAM_BASE[1] = 'T';
     SRAM_BASE[0] = 'D';
     return 0;
+}
+
+#define EEPROM_SETTINGS_SIZE 9u
+#define EEPROM_SETTINGS_OFFSET 44u
+#define EEPROM_SETTINGS_LENGTH_OFFSET 39u
+static const uint8_t eeprom_magic[4] = {'D','U','S','A'};
+
+static uint16_t eeprom_get16(const uint8_t *p) {
+    return (uint16_t)p[0] | (uint16_t)p[1] << 8;
+}
+
+static int eeprom_game_block(uint8_t *eeprom, size_t *size_out) {
+    const size_t size = eeprom[EEPROM_SETTINGS_LENGTH_OFFSET];
+    if(size == 0 || size > MIE_EEPROM_SIZE - EEPROM_SETTINGS_OFFSET) return 0;
+    if(size < EEPROM_SETTINGS_SIZE || memcmp(eeprom + EEPROM_SETTINGS_OFFSET,eeprom_magic,4)) return 0;
+    const uint16_t crc = mie_eeprom_crc16(eeprom + EEPROM_SETTINGS_OFFSET,size);
+    if(eeprom_get16(eeprom + 36) != crc || eeprom_get16(eeprom + 40) != crc) return 0;
+    if(eeprom[EEPROM_SETTINGS_OFFSET + 4] != 1) return 0;
+    *size_out = size;
+    return 1;
+}
+
+int nm_naomi_eeprom_load_settings(nm_settings_t *settings) {
+    if(!settings) return 0;
+    uint8_t eeprom[MIE_EEPROM_SIZE];
+    if(!mie_get_eeprom(eeprom)) return 0;
+    size_t size = 0;
+    if(!eeprom_game_block(eeprom,&size)) return 0;
+    (void)size;
+    nm_settings_t value = {
+        .difficulty = eeprom[EEPROM_SETTINGS_OFFSET + 5],
+        .advertise_sound = eeprom[EEPROM_SETTINGS_OFFSET + 6],
+        .control_scheme = eeprom[EEPROM_SETTINGS_OFFSET + 7],
+        .reset_with_p1_d = eeprom[EEPROM_SETTINGS_OFFSET + 8]
+    };
+    if(!nm_settings_valid(&value)) return 0;
+    *settings = value;
+    return 1;
+}
+
+int nm_naomi_eeprom_store_settings(const nm_settings_t *settings) {
+    if(!nm_settings_valid(settings)) return 0;
+    uint8_t eeprom[MIE_EEPROM_SIZE];
+    if(!mie_get_eeprom(eeprom)) return 0;
+
+    /* Never replace another title's game-settings block. An empty block or
+     * our own DUSA block is safe to update; the system-settings bytes remain
+     * untouched and their CRC is checked before any write. */
+    const uint16_t system_crc = mie_eeprom_crc16(eeprom + 2,16);
+    if(eeprom_get16(eeprom) != system_crc || eeprom_get16(eeprom + 18) != system_crc)
+        return 0;
+
+    size_t existing_size = 0;
+    const size_t declared_size = eeprom[EEPROM_SETTINGS_LENGTH_OFFSET];
+    if(declared_size != 0) {
+        if(!eeprom_game_block(eeprom,&existing_size)) return 0;
+    } else {
+        existing_size = EEPROM_SETTINGS_SIZE;
+        eeprom[EEPROM_SETTINGS_LENGTH_OFFSET] = EEPROM_SETTINGS_SIZE;
+    }
+
+    uint8_t *data = eeprom + EEPROM_SETTINGS_OFFSET;
+    memcpy(data,eeprom_magic,sizeof(eeprom_magic));
+    data[4] = 1;
+    data[5] = settings->difficulty;
+    data[6] = settings->advertise_sound;
+    data[7] = settings->control_scheme;
+    data[8] = settings->reset_with_p1_d;
+    (void)existing_size;
+
+    mie_eeprom_fix_crc(eeprom);
+    if(!mie_set_eeprom(eeprom)) return 0;
+
+    uint8_t verify[MIE_EEPROM_SIZE];
+    if(!mie_get_eeprom(verify)) return 0;
+    nm_settings_t readback;
+    return nm_naomi_eeprom_load_settings(&readback) &&
+        !memcmp(&readback,settings,sizeof(readback));
 }
 
 static const nm_save_device_t device = {
