@@ -31,7 +31,7 @@ def main() -> None:
         main_rom, test_rom, output = root / "main.bin", root / "test.bin", root / "out.bin"
         make_rom(main_rom, 0x8c020000, 0x8c020000, main_payload)
         main_image = bytearray(main_rom.read_bytes())
-        fake_romfs = b"ROMFS\\0" + bytes(14)
+        fake_romfs = b"ROMFS\0" + bytes(14)
         main_image.extend(fake_romfs)
         main_rom.write_bytes(main_image)
         make_rom(test_rom, 0x8c100000, 0x8c100000, test_payload)

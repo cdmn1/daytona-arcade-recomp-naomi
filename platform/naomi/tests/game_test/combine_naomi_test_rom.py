@@ -13,7 +13,7 @@ SEGMENT_SIZE = 12
 SEGMENT_COUNT = 8
 ALIGNMENT = 0x1000
 PIO_LIMIT = 0x10000000
-ROMFS_MAGIC = b"ROMFS\\0"
+ROMFS_MAGIC = b"ROMFS\0"
 
 
 def read_segment(header: bytes, offset: int):
@@ -53,7 +53,7 @@ def main():
     offset = (len(main_rom) + ALIGNMENT - 1) & ~(ALIGNMENT - 1)
     if offset >= PIO_LIMIT or test_seg[2] > PIO_LIMIT - offset:
         raise SystemExit("test executable exceeds the Naomi 256 MiB PIO address range")
-    main_rom.extend(b"\\x00" * (offset - len(main_rom)))
+    main_rom.extend(b"\x00" * (offset - len(main_rom)))
     main_rom.extend(payload)
 
     for i in range(SEGMENT_COUNT):
