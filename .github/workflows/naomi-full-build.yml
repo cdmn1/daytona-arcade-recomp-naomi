@@ -161,6 +161,36 @@ jobs:
                   raise SystemExit(f"Could not find Retail guard in {function}")
               s = s[:guard_at] + s[guard_at + len(guard):]
           p.write_text(s)
+
+          # On Naomi 1, ARCH_EXIT_MENU must hand off to the BIOS System Test
+          # Mode vector after KOS has completed its normal shutdown.
+          p = Path(os.environ["KOS_BASE"]) / "kernel/arch/dreamcast/kernel/init.c"
+          s = p.read_text()
+          original = """void arch_menu(void) {
+    dbglog(DBG_CRITICAL, "arch: exiting the system to the BIOS menu\\n");
+    syscall_system_bios_menu();
+}"""
+          naomi = """void arch_menu(void) {
+    dbglog(DBG_CRITICAL, "arch: exiting the system to the Naomi System Test Menu\\n");
+#if KOS_PLATFORM_IS_NAOMI
+    typedef void (*naomi_syscall_t)(void);
+    volatile uint32_t *syscall_vector = (volatile uint32_t *)0xAC018000u;
+    uint32_t entry = syscall_vector[0x11];
+    if(entry == 0 || entry == 0xFFFFFFFFu) {
+        dbglog(DBG_CRITICAL, "arch: invalid Naomi System Test Mode vector\\n");
+        for(;;) { }
+    }
+    ((naomi_syscall_t)(uintptr_t)(entry | 0xA0000000u))();
+    __builtin_unreachable();
+#else
+    syscall_system_bios_menu();
+#endif
+}"""
+          if naomi not in s:
+              if original not in s:
+                  raise SystemExit("Could not locate KOS arch_menu() for Naomi BIOS hand-off")
+              s = s.replace(original, naomi, 1)
+              p.write_text(s)
           PY
           make -C "$KOS_BASE" -j2
 
