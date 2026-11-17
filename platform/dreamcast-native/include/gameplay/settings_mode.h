@@ -3,7 +3,7 @@
 
 /* The settings screen until a real options menu exists (code/gameplay/settings_mode.c): what the
  * original's test mode GAME ASSIGNMENTS offers a single-player game (include/settings.h), control scheme, reset option, records' reset
- * (BACKUP DATA CLEAR without the bookkeeping) and save status. From the title: the cabinet TEST switch on Naomi, or both triggers held and START as a fallback.
+ * (BACKUP DATA CLEAR without the bookkeeping) and save status. On Dreamcast only, entered from the title with both triggers held and START. Naomi uses the physical TEST switch to enter the BIOS System Test Menu and its separate Game Test executable.
  * Up/down select, left/right (or A) change, START or EXIT applies settings and returns to the title, B returns
  * without changing anything. */
 int nm_settings_mode_start(void);
