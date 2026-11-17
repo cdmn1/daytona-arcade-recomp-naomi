@@ -11,6 +11,9 @@
 #include <dc/maple/mie.h>
 #endif
 #include <arch/stack.h>
+#if defined(_arch_sub_naomi)
+#include <arch/arch.h>
+#endif
 #ifdef NATIVE_FRAME_COMPARE
 #include <dc/video.h>
 #endif
@@ -95,7 +98,7 @@ static enj_mode_t practice_mode={.name="Native driving practice",.mode_updater=p
 static const uint32_t attract_tick_limit=NM_ATTRACT_TICKS;
 static int practice_credit_pending;
 #if defined(_arch_sub_naomi)
-static int practice_test_latched,practice_reset_latched;
+static int practice_test_latched,practice_test_armed,practice_reset_latched;
 #endif
 /* The carried part of the original's car pool (frontend_pool.h): from power-on (nm_practice_run), each scene's exit
  * stores its cars, each scene's start reads it. */
@@ -907,12 +910,18 @@ static void practice_update(void *unused) {
 #if defined(_arch_sub_naomi)
         const int test_active=native_mie &&
             (native_mie->jvs.panel.psw.test || native_mie->jvs.system.test);
+        /* Ignore TEST if it was already held when the game first sampled JVS. */
+        if(!practice_test_armed) {
+            practice_test_latched=test_active;
+            practice_test_armed=1;
+        }
         if(!test_active) practice_test_latched=0;
         if(practice.attract_active && !practice.podium.phase && test_active && !practice_test_latched) {
             practice_test_latched=1;
-            nm_practice_render_release();
-            if(!nm_settings_mode_start()) enj_state_flag_shutdown(NULL);
-            return;
+            /* Let KOS shut down fully; the Naomi-only arch_menu hook then enters
+             * the BIOS System Test Menu, where GAME TEST MODE launches our test ELF. */
+            arch_set_exit_path(ARCH_EXIT_MENU);
+            exit(0);
         }
 #endif
         if(practice.attract_active && !practice.podium.phase &&
@@ -2262,6 +2271,9 @@ int nm_practice_run(const char *root) {
     nm_steer_table_build(practice_steer_table,NM_STEER_CURVE,NM_STEER_DEADZONE);
 #endif
     nm_frontend_pool_reset(&practice_pool);
+#if defined(_arch_sub_naomi)
+    practice_test_latched=practice_test_armed=practice_reset_latched=0;
+#endif
     practice_root=root;
     if (!enj_mode_push(&practice_mode)) return 1;
     nm_sound_init(root); /* Failure is reported there; the game then runs silent. */
