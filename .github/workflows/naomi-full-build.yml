@@ -175,13 +175,13 @@ jobs:
           # Mode vector after KOS has completed its normal shutdown.
           p = Path(os.environ["KOS_BASE"]) / "kernel/arch/dreamcast/kernel/init.c"
           s = p.read_text()
-          original = "\\n".join((
+          original = "\n".join((
               "void arch_menu(void) {",
-              '    dbglog(DBG_CRITICAL, "arch: exiting the system to the BIOS menu\\\\n");',
+              '    dbglog(DBG_CRITICAL, "arch: exiting the system to the BIOS menu\\n");',
               "    syscall_system_bios_menu();",
               "}"
           ))
-          naomi = "\\n".join((
+          naomi = "\n".join((
               "void arch_menu(void) {",
               '    dbglog(DBG_CRITICAL, "arch: exiting the system to the Naomi System Test Menu\\\\n");',
               "#if KOS_PLATFORM_IS_NAOMI",
@@ -189,7 +189,7 @@ jobs:
               "    volatile uint32_t *syscall_vector = (volatile uint32_t *)0xAC018000u;",
               "    uint32_t entry = syscall_vector[0x11];",
               "    if(entry == 0 || entry == 0xFFFFFFFFu) {",
-              '        dbglog(DBG_CRITICAL, "arch: invalid Naomi System Test Mode vector\\\\n");',
+              '        dbglog(DBG_CRITICAL, "arch: invalid Naomi System Test Mode vector\\n");',
               "        for(;;) { }",
               "    }",
               "    ((naomi_syscall_t)(uintptr_t)(entry | 0xA0000000u))();",
