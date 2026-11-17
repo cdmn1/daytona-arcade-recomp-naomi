@@ -42,7 +42,10 @@ $(NAOMI_BASE_BIN): $(ENJ_BINDIR)/$(ENJ_BASENAME).elf $(NAOMIBINTOOL)
 	@title_bytes=$$(printf '%s' "$(NAOMI_TITLE)" | wc -c); test "$$title_bytes" -le 32 || { echo "Naomi title exceeds 32 bytes: $(NAOMI_TITLE)"; exit 1; }
 	$(NAOMIBINTOOL) build $@ -d "CDMN" -t "$(NAOMI_TITLE)" -e $<
 
-$(NAOMI_TEST_ELF): $(NAOMI_TEST_DIR)/test_main.c $(NAOMI_TEST_DIR)/Makefile $(NAOMI_TEST_DIR)/combine_naomi_test_rom.py
+$(NAOMI_TEST_ELF): $(NAOMI_TEST_DIR)/test_main.c $(NAOMI_TEST_DIR)/Makefile $(NAOMI_TEST_DIR)/combine_naomi_test_rom.py \
+        $(NAOMI_TEST_DIR)/test_combine_naomi_test_rom.py $(NAOMI_TEST_DIR)/../../code/naomi_save.c \
+        code/save/save_data.c code/save/save_store.c include/save_data.h include/save_store.h \
+        include/settings.h include/race_records.h $(NATIVE_RECORD_DATA_DIR)/race_record_data.h
 	@test -n "$(NATIVE_RECORD_DATA_DIR)" || { echo "Missing NATIVE_RECORD_DATA_DIR for Naomi Game Test"; exit 1; }
 	$(MAKE) -C $(NAOMI_TEST_DIR) RECORD_DATA_DIR="$(abspath $(NATIVE_RECORD_DATA_DIR))" all
 
