@@ -1,5 +1,4 @@
 #include "gameplay/title_mode.h"
-#include "gameplay/settings_mode.h"
 #include "gameplay/select_mode.h"
 #include "render/ui/title_render.h"
 #include "practice.h"
@@ -38,13 +37,15 @@ static void title_update(void *unused) {
     enj_ctrlr_state_t **controllers=enj_ctrl_get_states();
     for(size_t i=0;i<enj_ctrl_states_length();++i) if(controllers[i]) {
         const enj_ctrlr_state_t *c=controllers[i];
-        /* Both triggers held and START: the settings screen (gameplay/settings_mode.h), as the cabinet's TEST. */
+#if !defined(_arch_sub_naomi)
+        /* Dreamcast fallback only; Naomi TEST exits through the BIOS System Test Menu in practice.c. */
         if(c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME && c->ltrigger>=128 && c->rtrigger>=128) {
             if(!nm_title_render_release()) { enj_state_flag_shutdown(NULL);return; }
             nm_practice_attract_abandon();
             if(!nm_settings_mode_start()) enj_state_flag_shutdown(NULL);
             return;
         }
+#endif
         if(c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME || c->button.A==ENJ_BUTTON_DOWN_THIS_FRAME) {
             const uint32_t counter=nm_frontend_counter()+ticks+1u;
             if(!nm_title_render_release()) { enj_state_flag_shutdown(NULL);return; }
