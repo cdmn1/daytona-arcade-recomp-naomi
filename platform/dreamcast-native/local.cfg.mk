@@ -22,7 +22,8 @@ endif
 ROMBASEPATH := $(ENJ_ROMDIR)
 ENJ_CBASEPATH := /naomi/
 ENJ_CFLAGS += -I$(abspath ../naomi/include)
-OBJS += $(ENJ_BUILDDIR)/naomi/naomi_cart.o $(ENJ_BUILDDIR)/naomi/naomi_romfs.o
+OBJS += $(ENJ_BUILDDIR)/naomi/naomi_cart.o $(ENJ_BUILDDIR)/naomi/naomi_romfs.o \
+        $(ENJ_BUILDDIR)/naomi/naomi_save.o
 endif
 # Native title data is a separate, bounded PAL4 pack. It is embedded so the
 # title can replace the released race assets without a filesystem dependency.
