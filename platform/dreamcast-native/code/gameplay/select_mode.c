@@ -116,11 +116,10 @@ int nm_select_mode_start(int scene, uint32_t credit_counter) {
 }
 
 int nm_select_attract_button(unsigned start, unsigned ltrigger, unsigned rtrigger) {
-    /* Both triggers and START: the settings screen, as from the title. */
-    if(!start || ltrigger<128 || rtrigger<128) return 0;
-    nm_practice_render_release();
-    if(!nm_settings_mode_start()) enj_state_flag_shutdown(NULL);
-    return 1;
+    /* Naomi settings now live in the separate BIOS-launched GAME TEST MODE program.
+     * Do not launch the retired custom in-game settings screen. */
+    (void)start; (void)ltrigger; (void)rtrigger;
+    return 0;
 }
 
 int nm_select_credit(uint32_t credit_counter) {
