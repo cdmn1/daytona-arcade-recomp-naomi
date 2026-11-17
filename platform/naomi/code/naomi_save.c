@@ -37,7 +37,11 @@ static size_t stored_size(void) {
        SRAM_BASE[2] != 'N' || SRAM_BASE[3] != '1')
         return 0;
     const uint32_t size = get32(4);
-    return size && size <= FILE_MAX ? size : 0;
+    if(!size || size > FILE_MAX) return 0;
+    uint32_t sum = 0x44544e31u;
+    for(size_t i = 0; i < size; ++i)
+        sum = (sum << 5) + sum + SRAM_BASE[HEADER + i];
+    return sum == get32(8) ? size : 0;
 }
 
 static void *sram_find(void *context) {
