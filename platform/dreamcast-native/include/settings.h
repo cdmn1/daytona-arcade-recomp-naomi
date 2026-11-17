@@ -12,7 +12,8 @@
  *                    ON sends ae1008 (the advertisement music), OFF be1a10 (the music fade).
  *   control_scheme   native-only: ANALOG retains wheel/pedals; DIGITAL maps P1 left/right, A/1 and B/2.
  *   reset_with_p1_d  native-only: whether P1 JVS switch 4 (D/4) resets the current session.
- * The two native-only fields are not original EEPROM fields; do not write them into reserved I/O-board bytes.
+ * The two native-only fields are not fields in the original Daytona/Model 2 EEPROM layout. On Naomi they are
+ * stored in this title's separate 9-byte MIE EEPROM game-settings block (naomi_save.c), not at the Model 2 offsets.
  * Not here (presentation the native art does not cover; the factory values are what the port shows):
  * COUNTRY +1b (JPN), CABINET +1a (DELUXE). Coins (+10, +15): the native game has none. The race length is no
  * setting in this revision: the laps are program table 03950[course]. */
