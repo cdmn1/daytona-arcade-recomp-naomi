@@ -2,6 +2,15 @@ name: Build Daytona USA Naomi NetDIMM image
 
 on:
   workflow_dispatch:
+  push:
+    branches: [naomi]
+    paths:
+      - ".github/workflows/naomi-full-build.yml"
+      - "platform/naomi/**"
+      - "platform/dreamcast-native/Makefile"
+      - "platform/dreamcast-native/local.cfg.mk"
+      - "platform/dreamcast-native/code/practice.c"
+      - "platform/dreamcast-native/code/save/game_save.c"
 
 permissions:
   contents: read
