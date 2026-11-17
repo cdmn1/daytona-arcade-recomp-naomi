@@ -10,7 +10,7 @@ include $(ENDJINN_ROOT)/base_link.mk
 ifeq ($(KOS_SUBARCH),naomi)
 # Naomi-only ROM-board/NetDIMM support. These objects are kept out of the
 # Dreamcast build and linked into the native game only for KOS_SUBARCH=naomi.
--include $(ENJ_BUILDDIR)/naomi/naomi_cart.d $(ENJ_BUILDDIR)/naomi/naomi_romfs.d
+-include $(ENJ_BUILDDIR)/naomi/naomi_cart.d $(ENJ_BUILDDIR)/naomi/naomi_romfs.d $(ENJ_BUILDDIR)/naomi/naomi_save.d
 
 $(ENJ_BUILDDIR)/naomi/%.o: ../naomi/code/%.c $(ENJ_MAKEFILE)
 	@mkdir -p $(dir $@)
@@ -20,6 +20,10 @@ NAOMIBINTOOL := $(KOS_BASE)/utils/naomibintool/naomibintool
 NAOMI_VERSION ?= $(shell cat ../../VERSION)
 NAOMI_TITLE ?= Daytona USA Recomp v$(NAOMI_VERSION)
 NAOMI_BASE_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-base.bin
+NAOMI_TEST_DIR := ../naomi/tests/game_test
+NAOMI_TEST_ELF := $(NAOMI_TEST_DIR)/daytona_game_test.elf
+NAOMI_TEST_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-test.bin
+NAOMI_DUAL_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-dual.bin
 NAOMI_ROMFS := $(ENJ_BINDIR)/$(ENJ_BASENAME).romfs
 NAOMI_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi.bin
 
@@ -38,14 +42,25 @@ $(NAOMI_BASE_BIN): $(ENJ_BINDIR)/$(ENJ_BASENAME).elf $(NAOMIBINTOOL)
 	@title_bytes=$$(printf '%s' "$(NAOMI_TITLE)" | wc -c); test "$$title_bytes" -le 32 || { echo "Naomi title exceeds 32 bytes: $(NAOMI_TITLE)"; exit 1; }
 	$(NAOMIBINTOOL) build $@ -d "CDMN" -t "$(NAOMI_TITLE)" -e $<
 
-$(NAOMI_BIN): $(NAOMI_BASE_BIN) $(NAOMI_ROMFS)
-	python3 ../naomi/tools/append_romfs.py $< $(NAOMI_ROMFS) $@
+$(NAOMI_TEST_ELF): $(NAOMI_TEST_DIR)/test_main.c $(NAOMI_TEST_DIR)/Makefile $(NAOMI_TEST_DIR)/combine_naomi_test_rom.py
+	@test -n "$(NATIVE_RECORD_DATA_DIR)" || { echo "Missing NATIVE_RECORD_DATA_DIR for Naomi Game Test"; exit 1; }
+	$(MAKE) -C $(NAOMI_TEST_DIR) RECORD_DATA_DIR="$(abspath $(NATIVE_RECORD_DATA_DIR))" all
+
+$(NAOMI_TEST_BIN): $(NAOMI_TEST_ELF) $(NAOMIBINTOOL)
+	$(NAOMIBINTOOL) build $@ -d "CDMN" -t "Daytona USA Game Test" -e $(NAOMI_TEST_ELF)
+
+$(NAOMI_DUAL_BIN): $(NAOMI_BASE_BIN) $(NAOMI_TEST_BIN) $(NAOMI_TEST_DIR)/combine_naomi_test_rom.py
+	python3 $(NAOMI_TEST_DIR)/combine_naomi_test_rom.py $(NAOMI_BASE_BIN) $(NAOMI_TEST_BIN) $@
+
+$(NAOMI_BIN): $(NAOMI_DUAL_BIN) $(NAOMI_ROMFS)
+	python3 ../naomi/tools/append_romfs.py $(NAOMI_DUAL_BIN) $(NAOMI_ROMFS) $@
 
 naomi-bin: $(NAOMI_BIN)
 
 .PHONY: naomi-clean
 naomi-clean:
-	-rm -f $(NAOMI_BASE_BIN) $(NAOMI_ROMFS) $(NAOMI_BIN)
+	-rm -f $(NAOMI_BASE_BIN) $(NAOMI_TEST_BIN) $(NAOMI_DUAL_BIN) $(NAOMI_ROMFS) $(NAOMI_BIN)
+	$(MAKE) -C $(NAOMI_TEST_DIR) clean
 
 clean: naomi-clean
 endif
