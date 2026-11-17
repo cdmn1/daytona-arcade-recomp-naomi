@@ -212,7 +212,7 @@ int main(int argc,char **argv) {
                 case MENU_CLEAR: page=PAGE_CLEAR;clear_selected=1;break;
                 case MENU_EXIT:
                     if(dirty) save_failed=!save_now();
-                    exit_to_system_menu();
+                    if(!save_failed) exit_to_system_menu();
                     break;
                 }
             }
@@ -225,7 +225,8 @@ int main(int argc,char **argv) {
             if(test_edge) {
                 if(assign_selected==ASSIGN_EXIT) {
                     if(dirty) save_failed=!save_now();
-                    dirty=0;page=PAGE_MENU;
+                    if(!save_failed) dirty=0;
+                    page=PAGE_MENU;
                 } else change_assignment(assign_selected);
             }
             render_assign(lines,assign_selected);
@@ -241,7 +242,7 @@ int main(int argc,char **argv) {
                     save.settings=settings;
                     dirty=1;
                     save_failed=!save_now();
-                    dirty=0;
+                    if(!save_failed) dirty=0;
                 }
                 page=PAGE_MENU;
             }
