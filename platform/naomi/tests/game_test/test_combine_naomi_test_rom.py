@@ -49,6 +49,7 @@ def main() -> None:
         assert image[fs_offset:fs_offset + len(fake_romfs)] == fake_romfs
         assert offset >= len(main_image)
         assert image[offset:offset + size] == test_payload
+        assert len(image) % 1024 == 0
         print("Naomi dual-entry ROM packing (ROMFS before test payload): OK")
 
 

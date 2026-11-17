@@ -55,6 +55,10 @@ def main():
         raise SystemExit("test executable exceeds the Naomi 256 MiB PIO address range")
     main_rom.extend(b"\x00" * (offset - len(main_rom)))
     main_rom.extend(payload)
+    final_size = (len(main_rom) + 1023) & ~1023
+    if final_size > PIO_LIMIT:
+        raise SystemExit("final ROM exceeds the Naomi 256 MiB PIO address range")
+    main_rom.extend(b"\x00" * (final_size - len(main_rom)))
 
     for i in range(SEGMENT_COUNT):
         struct.pack_into("<III", main_rom, TEST_SEGMENTS + i * SEGMENT_SIZE,
