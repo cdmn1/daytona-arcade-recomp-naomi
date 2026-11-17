@@ -916,7 +916,7 @@ static void practice_update(void *unused) {
             practice_test_armed=1;
         }
         if(!test_active) practice_test_latched=0;
-        if(practice.attract_active && !practice.podium.phase && test_active && !practice_test_latched) {
+        if(test_active && !practice_test_latched) {
             practice_test_latched=1;
             /* Let KOS shut down fully; the Naomi-only arch_menu hook then enters
              * the BIOS System Test Menu, where GAME TEST MODE launches our test ELF. */
