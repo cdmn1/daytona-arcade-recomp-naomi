@@ -10,6 +10,9 @@ on:
       - "platform/dreamcast-native/Makefile"
       - "platform/dreamcast-native/local.cfg.mk"
       - "platform/dreamcast-native/code/practice.c"
+      - "platform/dreamcast-native/code/gameplay/title_mode.c"
+      - "platform/dreamcast-native/include/gameplay/settings_mode.h"
+      - "platform/dreamcast-native/include/game_save.h"
       - "platform/dreamcast-native/code/save/game_save.c"
       - "platform/dreamcast-native/scripts/fetch_endjinn.sh"
 
