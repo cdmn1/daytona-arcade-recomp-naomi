@@ -1,4 +1,7 @@
 #include "gameplay/title_mode.h"
+#if defined(_arch_dreamcast) && !defined(_arch_sub_naomi)
+#include "gameplay/settings_mode.h"
+#endif
 #include "gameplay/select_mode.h"
 #include "render/ui/title_render.h"
 #include "practice.h"
@@ -37,7 +40,7 @@ static void title_update(void *unused) {
     enj_ctrlr_state_t **controllers=enj_ctrl_get_states();
     for(size_t i=0;i<enj_ctrl_states_length();++i) if(controllers[i]) {
         const enj_ctrlr_state_t *c=controllers[i];
-#if !defined(_arch_sub_naomi)
+#if defined(_arch_dreamcast) && !defined(_arch_sub_naomi)
         /* Dreamcast fallback only; Naomi TEST exits through the BIOS System Test Menu in practice.c. */
         if(c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME && c->ltrigger>=128 && c->rtrigger>=128) {
             if(!nm_title_render_release()) { enj_state_flag_shutdown(NULL);return; }
