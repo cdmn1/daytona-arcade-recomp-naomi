@@ -187,6 +187,9 @@ int main(int argc,char **argv) {
     nm_save_defaults(&save,nm_race_record_seeds);
     const nm_save_result_t loaded=nm_save_store_load(nm_naomi_save_device(),&save);
     printf("Daytona Game Test: SRAM load %s\n",nm_save_result_name(loaded));
+    /* The Naomi EEPROM is authoritative for operator settings; the SRAM file carries records. */
+    if(!nm_naomi_eeprom_load_settings(&save.settings))
+        printf("Daytona Game Test: EEPROM settings unavailable; retaining SRAM/default settings\n");
 
     pvr_init_defaults();
     pvr_set_bg_color(0.0f,0.0f,0.0f);
