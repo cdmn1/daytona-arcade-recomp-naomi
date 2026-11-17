@@ -154,7 +154,10 @@ static void render_input(char lines[LINE_COUNT][LINE_BYTES],mie_state_t *s) {
     snprintf(lines[4],LINE_BYTES,"SYSTEM: %02X PANEL: %02X",s->jvs.system.raw,s->jvs.panel.psw.raw);
     snprintf(lines[5],LINE_BYTES,"WHEEL/PEDALS: %u %u %u",s->jvs.analog[0],s->jvs.analog[1],s->jvs.analog[2]);
     snprintf(lines[6],LINE_BYTES,"ANALOG 3-7: %u %u %u %u %u",s->jvs.analog[3],s->jvs.analog[4],s->jvs.analog[5],s->jvs.analog[6],s->jvs.analog[7]);
-    snprintf(lines[7],LINE_BYTES,"P1 START: %u SERVICE: %u",s->jvs.p1.start,s->jvs.p1.service);
+    snprintf(lines[7],LINE_BYTES,"P1 L/R: %u/%u  SW16/SW2: %u/%u",
+        s->jvs.p1.left,s->jvs.p1.right,s->jvs.p1.sw16,s->jvs.p1.sw2);
+    snprintf(lines[8],LINE_BYTES,"P1 START: %u SERVICE: %u",s->jvs.p1.start,s->jvs.p1.service);
+    snprintf(lines[9],LINE_BYTES,"DIGITAL: L/R STEER, SW16/SW2 PEDALS");
     snprintf(lines[11],LINE_BYTES,"PRESS TEST TO RETURN");
 }
 

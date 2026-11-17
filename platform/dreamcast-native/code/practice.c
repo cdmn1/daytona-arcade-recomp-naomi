@@ -917,10 +917,21 @@ static void practice_update(void *unused) {
     for (size_t i=0; i<enj_ctrl_states_length(); ++i) if (controllers[i]) {
         const enj_ctrlr_state_t *c = controllers[i];
         const int digital=nm_game_settings()->control_scheme==NM_CONTROL_DIGITAL;
-        const int8_t steer_axis=digital ? (int8_t)((c->button.LEFT&1u)?-127:(c->button.RIGHT&1u)?127:0) : c->joyx;
-        const uint8_t accel_axis=digital ? (uint8_t)((c->button.A&1u)?184:56) :
+#if defined(_arch_sub_naomi)
+        /* Use the raw P1 JVS switches for digital mode; this avoids depending
+         * on the normalized controller mapper for cabinet button semantics. */
+        const int digital_left=native_mie ? native_mie->jvs.p1.left : (c->button.LEFT&1u);
+        const int digital_right=native_mie ? native_mie->jvs.p1.right : (c->button.RIGHT&1u);
+        const int digital_accel=native_mie ? native_mie->jvs.p1.sw16 : (c->button.A&1u);
+        const int digital_brake=native_mie ? native_mie->jvs.p1.sw2 : (c->button.B&1u);
+#else
+        const int digital_left=c->button.LEFT&1u, digital_right=c->button.RIGHT&1u;
+        const int digital_accel=c->button.A&1u, digital_brake=c->button.B&1u;
+#endif
+        const int8_t steer_axis=digital ? (int8_t)(digital_left?-127:digital_right?127:0) : c->joyx;
+        const uint8_t accel_axis=digital ? (uint8_t)(digital_accel?184:56) :
             (uint8_t)(56+(unsigned)c->rtrigger*128/255);
-        const uint8_t brake_axis=digital ? (uint8_t)((c->button.B&1u)?152:56) :
+        const uint8_t brake_axis=digital ? (uint8_t)(digital_brake?152:56) :
             (uint8_t)(56+(unsigned)c->ltrigger*96/255);
         /* Both schemes feed the same arcade ADC decoder. Digital uses full-lock left/right and
          * the existing pedal endpoints; analog preserves the calibrated wheel and trigger path. */
