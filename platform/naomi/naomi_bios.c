@@ -11,6 +11,7 @@
 
 static bool helpers_ready;
 static bool previous_test_pressed;
+static bool test_switch_initialized;
 
 bool naomi_bios_helpers_init(void)
 {
@@ -53,7 +54,15 @@ bool naomi_bios_helpers_ready(void)
 
 bool naomi_bios_test_switch_update(bool pressed)
 {
-    bool edge = pressed && !previous_test_pressed;
+    bool edge;
+
+    if(!test_switch_initialized) {
+        previous_test_pressed = pressed;
+        test_switch_initialized = true;
+        return false;
+    }
+
+    edge = pressed && !previous_test_pressed;
     previous_test_pressed = pressed;
     return edge;
 }
