@@ -55,7 +55,7 @@ static void vmu_release(void *context,uint8_t *data) { (void)context;free(data);
 static int vmu_write(void *context,void *card,const char *name,const uint8_t *data,size_t size) {
     (void)context;return vmufs_write(card,name,(void *)data,(int)size,VMUFS_OVERWRITE);
 }
-static const nm_save_device_t vmu={NULL,vmu_find,vmu_free_blocks,vmu_file_blocks,vmu_read,vmu_release,vmu_write};
+static const nm_save_device_t vmu __attribute__((unused))={NULL,vmu_find,vmu_free_blocks,vmu_file_blocks,vmu_read,vmu_release,vmu_write};
 #if defined(_arch_sub_naomi)
 #include "naomi_save.h"
 /* Naomi has no VMU: use this port's reserved battery-backed SRAM save area. */
