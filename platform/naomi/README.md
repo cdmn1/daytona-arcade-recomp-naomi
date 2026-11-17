@@ -140,9 +140,12 @@ The full game ROM now carries two independent executable entries:
 - the normal Daytona game entry;
 - a separately linked Daytona GAME TEST MODE entry in the Naomi ROM header's test segment.
 
-The test program is built in `tests/game_test/` and combined with the normal ROM by
-`combine_naomi_test_rom.py`. It provides INPUT TEST, GAME ASSIGNMENTS,
-BOOKKEEPING, BACKUP DATA CLEAR and EXIT. The four native settings
+The test program is built in `tests/game_test/`. The main executable is first
+followed immediately by ROMFS; the separate test executable is appended after
+ROMFS and referenced by the Naomi test-segment table. This keeps the main
+program's ROMFS location intact. `combine_naomi_test_rom.py` performs the
+second-stage packaging. It provides INPUT TEST, GAME ASSIGNMENTS, BOOKKEEPING,
+BACKUP DATA CLEAR and EXIT. The four native settings
 (difficulty, attract sound, ANALOG/DIGITAL and P1 D/4 reset) are saved with
 the records in this port's battery-backed Naomi SRAM save area.
 

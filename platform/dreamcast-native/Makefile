@@ -23,7 +23,7 @@ NAOMI_BASE_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-base.bin
 NAOMI_TEST_DIR := ../naomi/tests/game_test
 NAOMI_TEST_ELF := $(NAOMI_TEST_DIR)/daytona_game_test.elf
 NAOMI_TEST_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-test.bin
-NAOMI_DUAL_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-dual.bin
+NAOMI_MAIN_ROMFS_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi-main-romfs.bin
 NAOMI_ROMFS := $(ENJ_BINDIR)/$(ENJ_BASENAME).romfs
 NAOMI_BIN := $(ENJ_BINDIR)/$(ENJ_BASENAME).naomi.bin
 
@@ -52,17 +52,17 @@ $(NAOMI_TEST_ELF): $(NAOMI_TEST_DIR)/test_main.c $(NAOMI_TEST_DIR)/Makefile $(NA
 $(NAOMI_TEST_BIN): $(NAOMI_TEST_ELF) $(NAOMIBINTOOL)
 	$(NAOMIBINTOOL) build $@ -d "CDMN" -t "Daytona USA Game Test" -e $(NAOMI_TEST_ELF)
 
-$(NAOMI_DUAL_BIN): $(NAOMI_BASE_BIN) $(NAOMI_TEST_BIN) $(NAOMI_TEST_DIR)/combine_naomi_test_rom.py
-	python3 $(NAOMI_TEST_DIR)/combine_naomi_test_rom.py $(NAOMI_BASE_BIN) $(NAOMI_TEST_BIN) $@
+$(NAOMI_MAIN_ROMFS_BIN): $(NAOMI_BASE_BIN) $(NAOMI_ROMFS)
+	python3 ../naomi/tools/append_romfs.py $(NAOMI_BASE_BIN) $(NAOMI_ROMFS) $@
 
-$(NAOMI_BIN): $(NAOMI_DUAL_BIN) $(NAOMI_ROMFS)
-	python3 ../naomi/tools/append_romfs.py $(NAOMI_DUAL_BIN) $(NAOMI_ROMFS) $@
+$(NAOMI_BIN): $(NAOMI_MAIN_ROMFS_BIN) $(NAOMI_TEST_BIN) $(NAOMI_TEST_DIR)/combine_naomi_test_rom.py
+	python3 $(NAOMI_TEST_DIR)/combine_naomi_test_rom.py $(NAOMI_MAIN_ROMFS_BIN) $(NAOMI_TEST_BIN) $@
 
 naomi-bin: $(NAOMI_BIN)
 
 .PHONY: naomi-clean
 naomi-clean:
-	-rm -f $(NAOMI_BASE_BIN) $(NAOMI_TEST_BIN) $(NAOMI_DUAL_BIN) $(NAOMI_ROMFS) $(NAOMI_BIN)
+	-rm -f $(NAOMI_BASE_BIN) $(NAOMI_TEST_BIN) $(NAOMI_MAIN_ROMFS_BIN) $(NAOMI_ROMFS) $(NAOMI_BIN)
 	$(MAKE) -C $(NAOMI_TEST_DIR) clean
 
 clean: naomi-clean
