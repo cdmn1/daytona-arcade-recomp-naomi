@@ -29,7 +29,7 @@ desktop computer from your ROM set, then built for the other platform.
 A reusable KallistiOS/Naomi System Test Menu hand-off has now been proven in
 Flycast and on real Naomi 1 hardware in the separate VF3 Naomi probe. The
 platform-level recipe is documented here:
-[ KOS Naomi System Test Menu hand-off ](https://github.com/cdmn1/vf3-naomi/blob/main/docs/KOS_NAOMI_SYSTEM_TEST_HANDOFF.md).
+[KOS Naomi System Test Menu hand-off](https://github.com/cdmn1/vf3-naomi/blob/main/docs/KOS_NAOMI_SYSTEM_TEST_HANDOFF.md).
 
 The important detail is to request `ARCH_EXIT_MENU` and call `exit(0)`, so
 KOS completes its normal shutdown before the Naomi BIOS System Test Mode
