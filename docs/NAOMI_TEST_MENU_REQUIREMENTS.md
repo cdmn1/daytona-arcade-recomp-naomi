@@ -73,3 +73,10 @@ and the separate title-test program's EXIT handler.
 A Daytona test menu is complete only after the above lifecycle is exercised on Naomi hardware or a faithful Naomi system-menu environment, with working navigation, tests, assignments and return behavior. Previous test-menu work must not be assumed successful without this validation.
 
 The VF3 reference screenshots are in the separate `cdmn1/vf3-naomi` repository under `test menu flow/`.
+
+Source references from the recovered Virtua Fighter 4 Final Tuned Ver. B
+decompilation:
+
+- [Game-side TEST handler](https://github.com/djanice1980/VF4-Final-Tuned-Rev-B-Decomp-Source/blob/5646898aca5eedd45ae7495ad52bc7bd479604d4/src/vf4lib/libbase/src/system.c).
+- [Test-program EXIT handler](https://github.com/djanice1980/VF4-Final-Tuned-Rev-B-Decomp-Source/blob/5646898aca5eedd45ae7495ad52bc7bd479604d4/src_test/testmode/testmode.c).
+- [BIOS helper copy and helper 0x44](https://github.com/djanice1980/VF4-Final-Tuned-Rev-B-Decomp-Source/blob/5646898aca5eedd45ae7495ad52bc7bd479604d4/src_test/sdk/libam/nlasrvdt.c).
