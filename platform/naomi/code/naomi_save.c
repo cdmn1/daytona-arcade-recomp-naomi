@@ -181,9 +181,16 @@ int nm_naomi_eeprom_store_settings(const nm_settings_t *settings) {
 
     uint8_t verify[MIE_EEPROM_SIZE];
     if(!mie_get_eeprom(verify)) return 0;
-    nm_settings_t readback;
-    return nm_naomi_eeprom_load_settings(&readback) &&
-        !memcmp(&readback,settings,sizeof(readback));
+    size_t verify_size = 0;
+    if(!eeprom_game_block(verify,&verify_size)) return 0;
+    (void)verify_size;
+    const nm_settings_t readback = {
+        .difficulty = verify[EEPROM_SETTINGS_OFFSET + 5],
+        .advertise_sound = verify[EEPROM_SETTINGS_OFFSET + 6],
+        .control_scheme = verify[EEPROM_SETTINGS_OFFSET + 7],
+        .reset_with_p1_d = verify[EEPROM_SETTINGS_OFFSET + 8]
+    };
+    return nm_settings_valid(&readback) && !memcmp(&readback,settings,sizeof(readback));
 }
 
 static const nm_save_device_t device = {
