@@ -7,6 +7,9 @@
 #include <malloc.h>
 #include <kos/mm.h>
 #if defined(_arch_sub_naomi)
+#include <kos/thread.h>
+#endif
+#if defined(_arch_sub_naomi)
 #include <dc/maple.h>
 #include <dc/maple/mie.h>
 #endif
@@ -902,6 +905,8 @@ static void practice_update(void *unused) {
     if(!test_active) practice_test_latched=0;
     if(test_active && !practice_test_latched) {
         practice_test_latched=1;
+        /* Finish any asynchronous record write before leaving the game. */
+        while(nm_game_save_status().busy) thd_sleep(1);
         /* Let KOS shut down fully; the Naomi-only arch_menu hook then enters
          * the BIOS System Test Menu, where GAME TEST MODE launches our test ELF. */
         arch_set_exit_path(ARCH_EXIT_MENU);

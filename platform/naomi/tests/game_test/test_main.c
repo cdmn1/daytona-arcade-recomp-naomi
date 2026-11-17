@@ -192,7 +192,10 @@ int main(int argc,char **argv) {
     font_init();
     maple_wait_scan();
 
+    maple_wait_scan();
     mie_state_t *initial=mie_status();
+    /* BIOS may launch GAME TEST while the cabinet TEST switch is still held.
+     * Treat that held state as the initial level, not as a fresh menu press. */
     int previous_service=initial?!!initial->jvs.p1.service:0;
     int previous_test=initial?!!(initial->jvs.system.test||initial->jvs.panel.psw.test):0;
     unsigned page=PAGE_MENU,menu_selected=0,assign_selected=0,clear_selected=1;
