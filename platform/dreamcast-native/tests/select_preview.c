@@ -85,7 +85,7 @@ static int nm_palette_ram_write(unsigned first, const uint32_t *argb, unsigned c
 
 int main(int argc, char **argv) {
     if (argc != 9) { fputs("usage: select_preview ROOT/ STATE SLOT TIMER FRAME_X FRAME_Y COUNTER COURSE\n", stderr); return 2; }
-    if (!nm_select_render_load(argv[1])) return 1;
+    if (!nm_select_render_load(argv[1], 1u)) return 1;
     for (unsigned i = 0; i < texture_count; ++i)
         printf("T %u tex-%u.dt %u %u %u %u\n", i, i, texture_info[i].width, texture_info[i].height, texture_info[i].palette, texture_info[i].opaque);
     nm_select_t s; memset(&s, 0, sizeof(s));

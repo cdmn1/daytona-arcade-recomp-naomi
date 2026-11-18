@@ -299,12 +299,16 @@ export_ui() {
   $M $R 240 --export-native-sky $X/sky
   $M $R 3120 --export-native-2d $X/title
 }
-DESC_export_select="course/transmission select and GENTLEMEN screens (--export-native-select: race_to_end, course_advanced, course_expert)"
+DESC_export_select="regional course/transmission select and GENTLEMEN screens for USA, JPN and EXPORT"
 export_select() {
-  fresh $X/select-rte $X/select-adv $X/select-exp
-  $M $R 2600 --inputs $REPO/scripts/inputs/race_to_end.txt --export-native-select $X/select-rte
-  $M $R 1700 --inputs $RC/inputs/course_advanced.txt --export-native-select $X/select-adv
-  $M $R 1740 --inputs $RC/inputs/course_expert.txt --export-native-select $X/select-exp
+  local country
+  for country in usa jpn export; do
+    fresh $X/select-$country-rte $X/select-$country-adv $X/select-$country-exp $X/nvram-select-$country
+    python3 $T/settings_eeprom.py $R/program.bin $X/nvram-select-$country --country $country
+    $M $R 2600 --nvram $X/nvram-select-$country --inputs $REPO/scripts/inputs/race_to_end.txt --export-native-select $X/select-$country-rte
+    $M $R 1700 --nvram $X/nvram-select-$country --inputs $RC/inputs/course_advanced.txt --export-native-select $X/select-$country-adv
+    $M $R 1740 --nvram $X/nvram-select-$country --inputs $RC/inputs/course_expert.txt --export-native-select $X/select-$country-exp
+  done
 }
 step export_cells export_cells
 step export_cars export_cars
@@ -643,11 +647,14 @@ ui_packs() {
   python3 $T/prepare_scene.py $X/title $HD/title --title-program $R/program.bin
 }
 step ui_packs ui_packs
-DESC_select_pack="select screens: PAL4 textures and select.dsl (prepare_select.py), checked against the original's screens"
+DESC_select_pack="USA, JPN and EXPORT select screens: PAL4 textures and select.dsl, each checked against its original screens"
 select_pack() {
-  fresh $W/select
-  python3 $T/prepare_select.py $X/select-rte $X/select-adv $X/select-exp $W/select
-  python3 $DN/tests/test_select_render.py $W/select $X/select-rte
+  local country
+  for country in usa jpn export; do
+    fresh $W/select-$country
+    python3 $T/prepare_select.py $X/select-$country-rte $X/select-$country-adv $X/select-$country-exp $W/select-$country
+    python3 $DN/tests/test_select_render.py $W/select-$country $X/select-$country-rte
+  done
 }
 step select_pack select_pack
 DESC_podium_screen="podium screen: the photo model (--export-native-objects 288cb94), banner, logos, text, background"
@@ -893,7 +900,7 @@ assets() {
     cp $W/ui/name.dnm $W/ui/result.dnm $W/ui/finish.dnm $W/ui/sky/sky.dns $d/
     cp $W/ui/finish/*.dt $W/ui/finish/*.dt.pal $d/finish/
     cp $HD/hud/hud/* $d/hud/
-    mkdir -p $d/select; cp $W/select/select/* $d/select/
+    for country in usa jpn export; do mkdir -p $d/select-$country; cp $W/select-$country/select/* $d/select-$country/; done
     cp $HD/result-labels/label-*.dt $HD/result-labels/labels.dp $d/labels/
     cp $HD/name/labels/label-*.dt $HD/name/labels/labels.dp $d/name-labels/
     cp $HD/result-pal4/texture_*.dt $HD/result-pal4/palettes.dpal $d/result/

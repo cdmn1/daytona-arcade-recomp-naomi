@@ -3,6 +3,7 @@
 #include "gameplay/select_mode.h"
 #include "gameplay/settings_mode.h"
 #include "select.h"
+#include "game_save.h"
 #include "practice.h"
 #include "render/scene/practice.h"
 #include "render/ui/select_render.h"
@@ -108,7 +109,9 @@ int nm_select_mode_start(int scene, uint32_t credit_counter) {
     nm_select_enter(&select_state);
     wanted=0;stick_armed=1;confirm_pending=0;trigger_armed=0;previous_steer=0;
     frame_clock=(nm_frame_clock_t){0};remainder_us=0;frames=0;
-    if(!nm_select_render_load(root)) return 0;
+    const nm_settings_t *settings=nm_game_settings();
+    const unsigned country=settings ? settings->country : NM_COUNTRY_JPN;
+    if(!nm_select_render_load(root,country)) return 0;
     nm_sound_command(NM_MUSIC_GAME_START); /* 2850: phase 12 */
     nm_sound_settle();
     printf("Native game start: credit at 5010b0 %lu, scene %d\n",(unsigned long)credit_counter,scene);
