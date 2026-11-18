@@ -104,11 +104,33 @@ static unsigned practice_coin_mode(void);
 static uint8_t practice_credits;
 #if defined(_arch_sub_naomi)
 static int practice_test_latched,practice_test_armed;
+static uint16_t practice_coin_meter[2];
+static uint8_t practice_coin_meter_armed,practice_service_held;
 static void practice_coin_poll_mie(const mie_state_t *mie) {
-    if(!mie || nm_game_settings()->coin_mode==NM_COIN_FREE_PLAY) return;
-    for(unsigned slot=0;slot<2;++slot)
-        if((mie->jvs.coin_pulse&(1u<<slot)) && !(mie->jvs.coin_fault&(1u<<slot)) && practice_credits<99u)
-            ++practice_credits;
+    if(!mie) return;
+    /* The JVS COININP meter is cumulative. Track its positive deltas instead of
+     * relying on the one-frame coin_pulse flag, which can be missed between
+     * game updates. Establish a baseline on first observation. */
+    if(!practice_coin_meter_armed) {
+        for(unsigned slot=0;slot<2;++slot) practice_coin_meter[slot]=mie->jvs.coin[slot].count;
+        practice_service_held=(uint8_t)!!mie->jvs.p1.service;
+        practice_coin_meter_armed=1;
+        return;
+    }
+    const int paid=nm_game_settings()->coin_mode!=NM_COIN_FREE_PLAY;
+    for(unsigned slot=0;slot<2;++slot) {
+        const uint16_t current=mie->jvs.coin[slot].count;
+        const uint16_t inserted=(uint16_t)(current-practice_coin_meter[slot]);
+        practice_coin_meter[slot]=current;
+        if(paid && !(mie->jvs.coin_fault&(1u<<slot)) && inserted) {
+            const unsigned room=99u-practice_credits;
+            practice_credits=(uint8_t)(practice_credits+(inserted>room?room:inserted));
+        }
+    }
+    /* JVS SW7 (P1 SERVICE) is the operator's service-credit button. */
+    const int service=!!mie->jvs.p1.service;
+    if(paid && service && !practice_service_held && practice_credits<99u) ++practice_credits;
+    practice_service_held=(uint8_t)service;
 }
 #endif
 void nm_practice_credit_poll(void) {
