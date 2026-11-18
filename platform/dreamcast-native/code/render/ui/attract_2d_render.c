@@ -1,5 +1,6 @@
 /* The attract's 2D layer: include/render/ui/attract_2d_render.h. */
 #include "render/ui/attract_2d_render.h"
+#include "game_save.h"
 #include <enDjinn/enj_enDjinn.h>
 #include <stdio.h>
 #include <string.h>
@@ -7,8 +8,6 @@
 #include "attract_2d.h" /* with attract_2d_data.h (NATIVE_ATTRACT_2D_DIR, local.cfg.mk): tools/prepare_attract_2d.py */
 #include "nm_mem.h"
 
-/* 53e59a & 1 of the reference board (the factory settings): the demo's Japanese text. */
-#define ATTRACT_2D_COUNTRY 1u
 /* The screen's tile rows and columns (496 x 384 pixels). */
 enum { SCREEN_COLUMNS = 62, SCREEN_ROWS = 48 };
 
@@ -94,7 +93,11 @@ int nm_attract_2d_render_load(const char *root) {
 
 void nm_attract_2d_phase2(unsigned course, const nm_race_record_t *records_of_course, unsigned view) {
     stats_print();
-    nm_a2d_phase2(&layer, course, records_of_course, ATTRACT_2D_COUNTRY, view);
+    /* The original selects its attract/demo text with COUNTRY bit 0 (53e59a):
+     * USA/EXPORT use the international set; JPN uses the Japanese set. */
+    const nm_settings_t *settings=nm_game_settings();
+    const unsigned country=settings ? settings->country : NM_COUNTRY_JPN;
+    nm_a2d_phase2(&layer, course, records_of_course, country, view);
     shown = 1; stale = 1;
 }
 void nm_attract_2d_cinematic(unsigned phase, uint32_t counter, int last) {
