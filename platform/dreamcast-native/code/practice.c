@@ -127,12 +127,18 @@ static void practice_coin_poll_mie(const mie_state_t *mie) {
              * report a large jump for one chute event. The game is configured
              * for 1 COIN = 1 CREDIT: treat each observed positive meter change
              * as one coin event, never as the numeric value of the jump. */
-            if(practice_credits<99u) ++practice_credits;
+            if(practice_credits<99u) {
+                ++practice_credits;
+                nm_sound_command(UINT32_C(0x009e127f)); /* SE 18: coin/credit awarded. */
+            }
         }
     }
     /* JVS SW7 (P1 SERVICE) is the operator's service-credit button. */
     const int service=!!mie->jvs.p1.service;
-    if(paid && service && !practice_service_held && practice_credits<99u) ++practice_credits;
+    if(paid && service && !practice_service_held && practice_credits<99u) {
+        ++practice_credits;
+        nm_sound_command(UINT32_C(0x009e127f)); /* SE 18: service credit awarded. */
+    }
     practice_service_held=(uint8_t)service;
 }
 #endif
