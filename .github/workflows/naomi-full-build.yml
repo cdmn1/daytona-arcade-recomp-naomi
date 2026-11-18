@@ -11,6 +11,8 @@ on:
       - "platform/dreamcast-native/recipes/build_assets.sh"
       - "platform/dreamcast-native/tools/export_select.hpp"
       - "platform/dreamcast-native/tools/prepare_select.py"
+      - "platform/dreamcast-native/tests/test_select_render.py"
+      - "platform/dreamcast-native/tests/select_preview.c"
       - "platform/dreamcast-native/code/render/ui/select_render.c"
       - "platform/dreamcast-native/include/render/ui/select_render.h"
       - "platform/dreamcast-native/code/render/ui/select_mode.c"
