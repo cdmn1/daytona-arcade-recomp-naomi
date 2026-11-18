@@ -23,6 +23,7 @@ NAOMIBINTOOL ?= $(KOS_BASE)/utils/naomibintool/naomibintool
 # The Game Test uses the same streamed announcer pack as the main Naomi game.
 # Its sound driver and phrase reader are built into the BIOS-launched test executable.
 # The settings save payload is checked by the Naomi image's preflight host tests.
+# Keep the test ROM and save data schema in lockstep.
 CFLAGS += -DNM_SFX_VOICE_STREAM=1 -I$(ROOT)/include -I$(RECORD_DATA_DIR) -I../../include -I$(AICAFLOW_ROOT)/driver/include -I$(AICAFLOW_ROOT)/driver/format/include -I$(AICAFLOW_ROOT)/driver/sh4/include -I$(SH4ZAM_ROOT)/include --embed-dir=$(AICAFLOW_ROOT)/firmware -D__DREAMCAST__=1 -std=gnu11 -Wall -Wextra
 LDFLAGS += -Wl,--wrap=snd_init -Wl,--wrap=snd_shutdown
 LDLIBS += $(AICAFLOW_LIB) $(SH4ZAM_LIB)
