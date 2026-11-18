@@ -16,6 +16,8 @@
 #include "save_data.h"
 #include "save_store.h"
 #include "naomi_save.h"
+#include "naomi_romfs.h"
+#include "audio/sound.h"
 #include "race_record_data.h"
 
 KOS_INIT_FLAGS(INIT_DEFAULT | INIT_MIE);
@@ -30,9 +32,12 @@ static nm_save_t save;
 static int dirty;
 static int save_failed;
 static int eeprom_warning;
+static int sound_ready;
+static unsigned sound_selected;
 
-enum { PAGE_MENU, PAGE_INPUT, PAGE_ASSIGN, PAGE_BOOKKEEPING, PAGE_CLEAR };
-enum { MENU_INPUT, MENU_ASSIGN, MENU_BOOKKEEPING, MENU_CLEAR, MENU_EXIT, MENU_COUNT };
+enum { PAGE_MENU, PAGE_INPUT, PAGE_ASSIGN, PAGE_BOOKKEEPING, PAGE_SOUND, PAGE_BGM, PAGE_SE, PAGE_CLEAR };
+enum { MENU_INPUT, MENU_ASSIGN, MENU_BOOKKEEPING, MENU_SOUND, MENU_CLEAR, MENU_EXIT, MENU_COUNT };
+enum { SOUND_BGM, SOUND_SE, SOUND_STOP, SOUND_EXIT, SOUND_COUNT };
 enum { ASSIGN_DIFFICULTY, ASSIGN_ADVERTISE, ASSIGN_COIN_MODE, ASSIGN_CONTROL, ASSIGN_EXIT, ASSIGN_COUNT };
 
 static mie_state_t *mie_status(void) {
@@ -127,7 +132,7 @@ static void change_assignment(unsigned item) {
 static void render_menu(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
     snprintf(lines[0],LINE_BYTES,"DAYTONA USA GAME TEST MODE");
     snprintf(lines[1],LINE_BYTES,"SELECT: SERVICE BUTTON / ENTER: TEST");
-    const char *items[MENU_COUNT]={"INPUT TEST","GAME ASSIGNMENTS","BOOKKEEPING","BACKUP DATA CLEAR","EXIT"};
+    const char *items[MENU_COUNT]={"INPUT TEST","GAME ASSIGNMENTS","BOOKKEEPING","SOUND TEST","BACKUP DATA CLEAR","EXIT"};
     for(unsigned i=0;i<MENU_COUNT;++i)
         snprintf(lines[2+i],LINE_BYTES,"%s %s",selected==i?">":" ",items[i]);
     lines[7][0]=0;
@@ -187,6 +192,48 @@ static void render_bookkeeping(char lines[LINE_COUNT][LINE_BYTES]) {
     snprintf(lines[11],LINE_BYTES,"PRESS TEST TO RETURN");
 }
 
+static const uint32_t bgm_commands[14] = {
+    0xae1001,0xae1002,0xae1003,0xae1004,0xae1005,0xae1006,0xae1007,
+    0xae1008,0xae1009,0xae100a,0xae100b,0xae100c,0xae100d,0xae100e
+};
+static const char *bgm_names[14] = {
+    "START YOUR ENGINES","GAME OVER","BITCHING","LET'S GO AWAY DAYTONA",
+    "GO TO THE VICTORY LANE","BREAK DOWN","THE KING OF SPEED","LET'S GO AWAY ADV",
+    "SKY HIGH","CHECK IT UP","DREAM OF THE DAYTONA","ROLLING STARTED","CAN YOU FLY","DRY WAY"
+};
+
+static void render_sound(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
+    snprintf(lines[0],LINE_BYTES,"SOUND TEST");
+    snprintf(lines[1],LINE_BYTES,"SERVICE: SELECT / TEST: PLAY");
+    snprintf(lines[2],LINE_BYTES,"%s BGM TEST",selected==SOUND_BGM?">":" ");
+    snprintf(lines[3],LINE_BYTES,"%s SE TEST",selected==SOUND_SE?">":" ");
+    snprintf(lines[4],LINE_BYTES,"%s STOP ALL",selected==SOUND_STOP?">":" ");
+    snprintf(lines[5],LINE_BYTES,"%s EXIT",selected==SOUND_EXIT?">":" ");
+    snprintf(lines[8],LINE_BYTES,"%s",sound_ready?"AICAFLOW READY":"AUDIO / ROMFS UNAVAILABLE");
+    snprintf(lines[11],LINE_BYTES,"TEST: ENTER");
+}
+
+static void render_bgm(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
+    snprintf(lines[0],LINE_BYTES,"BGM TEST");
+    snprintf(lines[1],LINE_BYTES,"SERVICE: NEXT / TEST: PLAY");
+    if(selected<14) {
+        snprintf(lines[3],LINE_BYTES,"> %02u %s",selected+1,bgm_names[selected]);
+        snprintf(lines[5],LINE_BYTES,"TRACK COMMAND: %06lX",(unsigned long)bgm_commands[selected]);
+    } else if(selected==14) snprintf(lines[3],LINE_BYTES,"> STOP MUSIC");
+    else snprintf(lines[3],LINE_BYTES,"> EXIT");
+    snprintf(lines[11],LINE_BYTES,"TEST: PLAY / SELECT");
+}
+
+static void render_se(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
+    snprintf(lines[0],LINE_BYTES,"SOUND EFFECT TEST");
+    snprintf(lines[1],LINE_BYTES,"SERVICE: NEXT / TEST: PLAY");
+    if(selected<45) snprintf(lines[3],LINE_BYTES,"> SOUND EFFECT %02u",selected+1);
+    else if(selected==45) snprintf(lines[3],LINE_BYTES,"> STOP EFFECTS");
+    else snprintf(lines[3],LINE_BYTES,"> EXIT");
+    snprintf(lines[5],LINE_BYTES,"COMMAND: 9E%02X7F",selected<45?selected+1:0);
+    snprintf(lines[11],LINE_BYTES,"TEST: PLAY / SELECT");
+}
+
 static void render_clear(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
     snprintf(lines[0],LINE_BYTES,"BACKUP DATA CLEAR");
     snprintf(lines[2],LINE_BYTES,"%s YES",selected==0?">":" ");
@@ -205,6 +252,11 @@ int main(int argc,char **argv) {
     /* The Naomi EEPROM is authoritative for operator settings; the SRAM file carries records. */
     if(!nm_naomi_eeprom_load_settings(&save.settings))
         printf("Daytona Game Test: EEPROM settings unavailable; retaining SRAM/default settings\n");
+
+    if(naomi_romfs_init_default()==0) {
+        sound_ready=nm_sound_init("/naomi/");
+        printf("Daytona Game Test: sound %s\n",sound_ready?"ready":"unavailable");
+    } else printf("Daytona Game Test: ROMFS mount failed; sound test unavailable\n");
 
     pvr_init_defaults();
     pvr_set_bg_color(0.0f,0.0f,0.0f);
@@ -235,10 +287,11 @@ int main(int argc,char **argv) {
                 case MENU_INPUT: page=PAGE_INPUT;break;
                 case MENU_ASSIGN: page=PAGE_ASSIGN;assign_selected=0;break;
                 case MENU_BOOKKEEPING: page=PAGE_BOOKKEEPING;break;
+                case MENU_SOUND: page=PAGE_SOUND;sound_selected=0;break;
                 case MENU_CLEAR: page=PAGE_CLEAR;clear_selected=1;break;
                 case MENU_EXIT:
                     if(dirty) save_failed=!save_now();
-                    if(!save_failed) exit_to_system_menu();
+                    if(!save_failed) { if(sound_ready) nm_sound_shutdown(); naomi_romfs_shutdown(); exit_to_system_menu(); }
                     break;
                 }
             }
@@ -259,6 +312,36 @@ int main(int argc,char **argv) {
         } else if(page==PAGE_BOOKKEEPING) {
             if(test_edge) page=PAGE_MENU;
             render_bookkeeping(lines);
+        } else if(page==PAGE_SOUND) {
+            if(service_edge) sound_selected=(sound_selected+1u)%SOUND_COUNT;
+            if(test_edge) {
+                if(sound_selected==SOUND_BGM) { page=PAGE_BGM;assign_selected=0; }
+                else if(sound_selected==SOUND_SE) { page=PAGE_SE;assign_selected=0; }
+                else if(sound_selected==SOUND_STOP && sound_ready) {
+                    nm_sound_command(0xbe507e);
+                    nm_sound_command(0xbe507d);
+                } else if(sound_selected==SOUND_EXIT) page=PAGE_MENU;
+            }
+            render_sound(lines,sound_selected);
+        } else if(page==PAGE_BGM) {
+            if(service_edge) assign_selected=(assign_selected+1u)%16u;
+            if(test_edge) {
+                if(assign_selected<14 && sound_ready) {
+                    nm_sound_command(bgm_commands[assign_selected]);
+                    nm_sound_settle();
+                } else if(assign_selected==14 && sound_ready) nm_sound_command(0xbe507e);
+                else if(assign_selected==15) page=PAGE_SOUND;
+            }
+            render_bgm(lines,assign_selected);
+        } else if(page==PAGE_SE) {
+            if(service_edge) assign_selected=(assign_selected+1u)%47u;
+            if(test_edge) {
+                if(assign_selected<45 && sound_ready)
+                    nm_sound_command(0x9e00007fu | ((uint32_t)(assign_selected+1u)<<8));
+                else if(assign_selected==45 && sound_ready) nm_sound_command(0xbe507d);
+                else if(assign_selected==46) page=PAGE_SOUND;
+            }
+            render_se(lines,assign_selected);
         } else if(page==PAGE_CLEAR) {
             if(service_edge) clear_selected^=1u;
             if(test_edge) {
@@ -274,6 +357,7 @@ int main(int argc,char **argv) {
             }
             render_clear(lines,clear_selected);
         }
+        if(sound_ready) nm_sound_update();
         draw_lines(lines);
         thd_sleep(50);
     }
