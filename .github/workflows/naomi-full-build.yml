@@ -329,9 +329,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build/naomi-assets
-          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!**/__pycache__/**', '!**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
-          restore-keys: |
-            naomi-assets-${{ runner.os }}-1923733be4c9ee171ff5846d0d8f39f0a4f4027d03e970a266a94da7d281f8d6-7f52d06d5d1b2a2ccba88c7f32abbc830b0cdaed9bce238d627adb9667df64af
+          # v2 deliberately invalidates the pre-regional-select cache. Never restore a
+          # partial/older asset set: the game requires all three country select packs.
+          key: naomi-assets-v2-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!**/__pycache__/**', '!**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
 
       - name: Pre-flight Naomi build checks
         env:
@@ -356,7 +356,14 @@ jobs:
           test -f platform/naomi/tools/romfsgen.py
           if [ -n "${{ steps.asset-cache.outputs.cache-matched-key }}" ]; then
             test -s build/naomi-assets/make-vars.txt
-            echo "Pre-flight passed; compatible generated assets restored from cache."
+            for country in usa jpn export; do
+              test -s "build/naomi-assets/work/select-$country/select/select.dsl" || {
+                echo "::error::Cached assets are missing the $country course-select pack."
+                exit 1
+              }
+              test -s "build/naomi-assets/work/select-$country/select/tex-0.dt"
+            done
+            echo "Pre-flight passed; all three country select packs restored from cache."
           else
             echo "Pre-flight passed; asset generation is required."
           fi
