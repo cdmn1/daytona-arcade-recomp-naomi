@@ -35,9 +35,9 @@ static int eeprom_warning;
 static int sound_ready;
 static unsigned sound_selected;
 
-enum { PAGE_MENU, PAGE_INPUT, PAGE_ASSIGN, PAGE_BOOKKEEPING, PAGE_SOUND, PAGE_BGM, PAGE_SE, PAGE_CLEAR };
+enum { PAGE_MENU, PAGE_INPUT, PAGE_ASSIGN, PAGE_BOOKKEEPING, PAGE_SOUND, PAGE_BGM, PAGE_SE, PAGE_VOICE, PAGE_CLEAR };
 enum { MENU_INPUT, MENU_ASSIGN, MENU_BOOKKEEPING, MENU_SOUND, MENU_CLEAR, MENU_EXIT, MENU_COUNT };
-enum { SOUND_BGM, SOUND_SE, SOUND_STOP, SOUND_EXIT, SOUND_COUNT };
+enum { SOUND_BGM, SOUND_SE, SOUND_VOICE, SOUND_STOP, SOUND_EXIT, SOUND_COUNT };
 enum { ASSIGN_DIFFICULTY, ASSIGN_ADVERTISE, ASSIGN_COIN_MODE, ASSIGN_CONTROL, ASSIGN_EXIT, ASSIGN_COUNT };
 
 static mie_state_t *mie_status(void) {
@@ -206,8 +206,9 @@ static void render_sound(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
     snprintf(lines[1],LINE_BYTES,"SERVICE: SELECT / TEST: PLAY");
     snprintf(lines[2],LINE_BYTES,"%s BGM TEST",selected==SOUND_BGM?">":" ");
     snprintf(lines[3],LINE_BYTES,"%s SE TEST",selected==SOUND_SE?">":" ");
-    snprintf(lines[4],LINE_BYTES,"%s STOP ALL",selected==SOUND_STOP?">":" ");
-    snprintf(lines[5],LINE_BYTES,"%s EXIT",selected==SOUND_EXIT?">":" ");
+    snprintf(lines[4],LINE_BYTES,"%s VOICE TEST",selected==SOUND_VOICE?">":" ");
+    snprintf(lines[5],LINE_BYTES,"%s STOP ALL",selected==SOUND_STOP?">":" ");
+    snprintf(lines[6],LINE_BYTES,"%s EXIT",selected==SOUND_EXIT?">":" ");
     snprintf(lines[8],LINE_BYTES,"%s",sound_ready?"AICAFLOW READY":"AUDIO / ROMFS UNAVAILABLE");
     snprintf(lines[11],LINE_BYTES,"TEST: ENTER");
 }
@@ -231,6 +232,24 @@ static void render_se(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
     else snprintf(lines[3],LINE_BYTES,"> EXIT");
     snprintf(lines[5],LINE_BYTES,"COMMAND: 9E%02X7F",selected<45?selected+1:0);
     snprintf(lines[11],LINE_BYTES,"TEST: PLAY / SELECT");
+}
+
+static const uint32_t voice_commands[50] = {
+    0xae2100,0xae2101,0xae2105,0xae2106,0xae2107,0xae2108,0xae210f,0xae2111,
+    0xae2114,0xae2115,0xae2116,0xae2117,0xae211a,
+    0xae2120,0xae2121,0xae2122,0xae2123,0xae2124,0xae2125,0xae2126,0xae2127,
+    0xae2128,0xae2129,0xae212a,0xae212b,0xae212c,0xae212d,0xae212e,0xae212f,0xae2130,0xae2131,
+    0xae2133,0xae2134,0xae2135,0xae2136,0xae2137,0xae2138,
+    0xae2163,0xae2164,0xae2165,0xae2166,0xae2167,0xae2168,0xae2169,0xae216a,0xae216b,0xae216c,0xae216d,
+    0xae2170,0xae2171
+};
+
+static void render_voice(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
+    snprintf(lines[0],LINE_BYTES,"VOICE TEST");
+    snprintf(lines[1],LINE_BYTES,"SERVICE: NEXT / TEST: PLAY");
+    snprintf(lines[3],LINE_BYTES,"> ANNOUNCER PHRASE %02u",selected+1);
+    snprintf(lines[5],LINE_BYTES,"COMMAND: %06lX",(unsigned long)voice_commands[selected]);
+    snprintf(lines[11],LINE_BYTES,"TEST+SERVICE: BACK");
 }
 
 static void render_clear(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
@@ -316,6 +335,7 @@ int main(int argc,char **argv) {
             if(test_edge) {
                 if(sound_selected==SOUND_BGM) { page=PAGE_BGM;assign_selected=0; }
                 else if(sound_selected==SOUND_SE) { page=PAGE_SE;assign_selected=0; }
+                else if(sound_selected==SOUND_VOICE) { page=PAGE_VOICE;assign_selected=0; }
                 else if(sound_selected==SOUND_STOP && sound_ready) {
                     nm_sound_command(0xbe507e);
                     nm_sound_command(0xbe507d);
@@ -347,6 +367,13 @@ int main(int argc,char **argv) {
             }
             }
             render_se(lines,assign_selected);
+        } else if(page==PAGE_VOICE) {
+            if(service && test) page=PAGE_SOUND;
+            else {
+                if(service_edge) assign_selected=(assign_selected+1u)%50u;
+                if(test_edge && sound_ready) nm_sound_command(voice_commands[assign_selected]);
+            }
+            render_voice(lines,assign_selected);
         } else if(page==PAGE_CLEAR) {
             if(service_edge) clear_selected^=1u;
             if(test_edge) {
