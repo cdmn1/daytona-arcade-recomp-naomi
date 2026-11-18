@@ -21,6 +21,7 @@ TEST_ROM := daytona_game_test.bin
 OBJS := test_main.o save_data.o save_store.o naomi_save.o naomi_cart.o naomi_romfs.o sound.o sfx.o nm_mem.o
 NAOMIBINTOOL ?= $(KOS_BASE)/utils/naomibintool/naomibintool
 # The Game Test uses the same streamed announcer pack as the main Naomi game.
+# Its sound driver and phrase reader are built into the BIOS-launched test executable.
 CFLAGS += -DNM_SFX_VOICE_STREAM=1 -I$(ROOT)/include -I$(RECORD_DATA_DIR) -I../../include -I$(AICAFLOW_ROOT)/driver/include -I$(AICAFLOW_ROOT)/driver/format/include -I$(AICAFLOW_ROOT)/driver/sh4/include -I$(SH4ZAM_ROOT)/include --embed-dir=$(AICAFLOW_ROOT)/firmware -D__DREAMCAST__=1 -std=gnu11 -Wall -Wextra
 LDFLAGS += -Wl,--wrap=snd_init -Wl,--wrap=snd_shutdown
 LDLIBS += $(AICAFLOW_LIB) $(SH4ZAM_LIB)

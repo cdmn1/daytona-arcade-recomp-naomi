@@ -55,7 +55,7 @@ static uint32_t get32(const uint8_t *p) { return get16(p)|get16(p+2)<<16; }
 /* Payload v4 packs control (bits 0..1), cabinet (bit 2) and country (bits 3..4) into byte 10;
  * v1-v3 retain their original layout and load factory country/cabinet values. */
 static const uint8_t payload_magic[4]={'D','N','R','S'};
-_Static_assert(sizeof(nm_save_t)==10+sizeof(nm_race_record_t)*NM_SAVE_TABLES*NM_SAVE_SLOTS+4*NM_SAVE_TIME_ATTACK_WORDS,
+_Static_assert(sizeof(nm_save_t)==12+sizeof(nm_race_record_t)*NM_SAVE_TABLES*NM_SAVE_SLOTS+4*NM_SAVE_TIME_ATTACK_WORDS,
     "nm_save_t without padding");
 enum { PAYLOAD_RECORDS=16, PAYLOAD_TIME_ATTACK=PAYLOAD_RECORDS+NM_SAVE_TABLES*NM_SAVE_SLOTS*24,
        PAYLOAD_CRC=PAYLOAD_TIME_ATTACK+4*NM_SAVE_TIME_ATTACK_WORDS };
