@@ -73,6 +73,7 @@ static void finish(void) {
 static void update(void *unused) {
     (void)unused;
     nm_sound_update();
+    nm_practice_credit_poll();
     if(enj_state_get()->flags.shut_down) { nm_select_render_release();return; }
     uint32_t frame_ticks=nm_frame_ticks(&frame_clock); /* one tick per displayed frame (frame_clock.h) */
     if(frame_ticks>4) frame_ticks=4;
