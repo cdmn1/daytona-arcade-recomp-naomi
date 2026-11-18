@@ -13,6 +13,9 @@ static const uint32_t time_attack_reset[8]={
 void nm_save_defaults(nm_save_t *save,const nm_race_record_seed_t seeds[NM_SAVE_TABLES][NM_SAVE_SLOTS]) {
     nm_memset(save,0xff,sizeof(*save));
     save->settings=nm_settings_factory();
+    /* nm_settings_t grew by two bytes; keep the alignment gap before records deterministic for memcmp. */
+    const size_t used=sizeof(save->settings)+sizeof(save->selected);
+    nm_memset((uint8_t *)save+used,0,offsetof(nm_save_t,records)-used);
     for(unsigned t=0;t<NM_SAVE_TABLES;++t) {
         nm_race_records_reset(save->records[t],seeds[t]);
         save->selected[t]=NM_SAVE_NO_SLOT;
@@ -86,6 +89,7 @@ int nm_save_decode(const uint8_t *in,size_t size,nm_save_t *save) {
        (get16(in+4)!=1u && get16(in+4)!=2u && get16(in+4)!=3u && get16(in+4)!=NM_SAVE_PAYLOAD_VERSION) || get16(in+6)!=NM_SAVE_PAYLOAD_BYTES ||
        get32(in+PAYLOAD_CRC)!=nm_save_crc32(in,PAYLOAD_CRC)) return 0;
     nm_save_t s;
+    nm_memset(&s,0,sizeof(s));
     if(get16(in+4)==1u) {
         if(in[13] || in[14] || in[15]) return 0;
         s.settings=nm_settings_factory();
