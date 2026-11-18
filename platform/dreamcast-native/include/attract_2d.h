@@ -119,7 +119,13 @@ static inline void nm_a2d_time(nm_a2d_t *s, uint32_t time, uint32_t at) {
 static inline void nm_a2d_footer(nm_a2d_t *s) {
     (void)nm_a2d_block(s,0x2872a2au,0x10014d8u);
     (void)nm_a2d_block(s,0x2876a84u,0x100163cu);
-    if(s->coin_mode==NM_COIN_FREE_PLAY) { nm_a2d_string(s,nm_a2d_text_free_play,0x1001608u);return; }
+    if(s->coin_mode==NM_COIN_FREE_PLAY) {
+        nm_a2d_string(s,nm_a2d_text_free_play,0x1001608u);
+        /* The static footer artwork contains the paid-mode 0/1 counter.
+         * Blank its four character cells when FREE PLAY replaces it. */
+        for(uint32_t at=0x1001628u;at<=0x1001634u;at+=4u) nm_a2d_char(s,32u,at);
+        return;
+    }
     nm_a2d_string(s,s->credits<2u ? nm_a2d_text_credit : nm_a2d_text_credits,0x1001608u);
     nm_a2d_number(s,s->credits,0x1001628u,2);
     nm_a2d_char(s,62u,0x1001630u);
