@@ -221,7 +221,7 @@ static void render_bgm(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
         snprintf(lines[5],LINE_BYTES,"TRACK COMMAND: %06lX",(unsigned long)bgm_commands[selected]);
     } else if(selected==14) snprintf(lines[3],LINE_BYTES,"> STOP MUSIC");
     else snprintf(lines[3],LINE_BYTES,"> EXIT");
-    snprintf(lines[11],LINE_BYTES,"TEST: PLAY / SELECT");
+    snprintf(lines[11],LINE_BYTES,"TEST+SERVICE: BACK");
 }
 
 static void render_se(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
@@ -324,6 +324,8 @@ int main(int argc,char **argv) {
             }
             render_sound(lines,sound_selected);
         } else if(page==PAGE_BGM) {
+            if(service && test) page=PAGE_SOUND;
+            else {
             if(service_edge) assign_selected=(assign_selected+1u)%16u;
             if(test_edge) {
                 if(assign_selected<14 && sound_ready) {
@@ -332,14 +334,18 @@ int main(int argc,char **argv) {
                 } else if(assign_selected==14 && sound_ready) nm_sound_command(0xbe507e);
                 else if(assign_selected==15) page=PAGE_SOUND;
             }
+            }
             render_bgm(lines,assign_selected);
         } else if(page==PAGE_SE) {
+            if(service && test) page=PAGE_SOUND;
+            else {
             if(service_edge) assign_selected=(assign_selected+1u)%47u;
             if(test_edge) {
                 if(assign_selected<45 && sound_ready)
-                    nm_sound_command(0x9e00007fu | ((uint32_t)(assign_selected+1u)<<8));
+                    nm_sound_command(0x009e007fu | ((uint32_t)(assign_selected+1u)<<8));
                 else if(assign_selected==45 && sound_ready) nm_sound_command(0xbe507d);
                 else if(assign_selected==46) page=PAGE_SOUND;
+            }
             }
             render_se(lines,assign_selected);
         } else if(page==PAGE_CLEAR) {
