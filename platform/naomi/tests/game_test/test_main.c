@@ -135,7 +135,6 @@ static void render_menu(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
     const char *items[MENU_COUNT]={"INPUT TEST","GAME ASSIGNMENTS","BOOKKEEPING","SOUND TEST","BACKUP DATA CLEAR","EXIT"};
     for(unsigned i=0;i<MENU_COUNT;++i)
         snprintf(lines[2+i],LINE_BYTES,"%s %s",selected==i?">":" ",items[i]);
-    lines[7][0]=0;
     snprintf(lines[8],LINE_BYTES,"DIFFICULTY: %s",nm_settings_difficulty_name(save.settings.difficulty));
     snprintf(lines[9],LINE_BYTES,"CONTROL: %s",nm_settings_control_name(save.settings.control_scheme));
     snprintf(lines[10],LINE_BYTES,"COIN MODE: %s",nm_settings_coin_name(save.settings.coin_mode));
