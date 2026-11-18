@@ -320,6 +320,49 @@ int nm_practice_results_tick(nm_practice_scene_t *scene,unsigned results_phase,
     return 1;
 }
 
+static int practice_reset_session(const nm_player_t *previous) {
+    practice.results.mode=practice.results.ticks=0;practice.results.timer=practice.results.penalty=0;practice.results.scroll=0;
+    practice.results.show_labels=0;practice.results.after_podium=0;practice.results.podium_ticks=0;
+    practice.results.announcement_cursor=practice.results.commands=0;practice.results.command_hash=UINT32_C(2166136261);
+    practice_record_published=0;practice.podium=(nm_podium_t){0};
+#ifndef NATIVE_RACE_SCRIPT
+    practice_difficulty=nm_game_settings()->difficulty;
+#endif
+    nm_memset(&practice.state,0,sizeof(practice.state));nm_memset(&practice.intro,0,sizeof(practice.intro));
+    /* The loaded course's start camera, pit cameras and pit stop (race_start_data.h nm_race_course_starts). */
+    const nm_race_course_start_t *tables=nm_race_course_starts+practice.course;
+    if(practice.course>2 || !tables->tracks || practice.road.slot!=practice.course) return 0;
+    practice_cameras.tracks=tables->tracks;practice_cameras.tunnel=tables->tunnel;
+#ifdef NM_RACE_VIEW_DATA
+    practice_cameras.pit_views=tables->pit_views;
+#endif
+    /* e5ac: the grid's body list 286fab0[501464]. */
+    if(!nm_race_scene_start_carried(&practice.race,practice.math,&practice.contact,&practice.road,
+        practice.intro_paths,practice_difficulty,practice.transmission,&practice.marks,practice.road.profile_count,tables->pit,previous)) return 0;
+#ifdef NM_RACE_VIEW_DATA
+    practice.race.view_presets=nm_race_view_presets; /* VR1..VR4 (race_view.h) */
+#endif
+    practice_view_held=practice_view_pad=practice_view_step=0;
+    /* 3980[course] cars (40, 30, 20) from the 40-entry catalogue of 286fac0 rows every course shares. */
+    if(practice.race.count!=practice.road.grid_count || practice.race.count>40 ||
+       sizeof(nm_intro_body_models)/sizeof(nm_intro_body_models[0])!=40) return 0;
+    practice.intro.count=practice.race.count;
+    practice.race_bodies=0;
+    nm_spin_smoke_reset(&practice.spin_smoke);
+    practice.race_commands=0;
+    practice.race_command_hash=UINT32_C(2166136261);
+    nm_race_sound_hook_reset(0);
+    nm_race_sound_hook_course(practice.road.awards); /* the announcer's prefetch: the lap awards */
+    practice.start_pending=0;practice.start_edges=0;practice.shift_pending=0;
+    nm_props_start_edges(&practice.start_edges); /* the START edges Expert's actors see (props_scene.c) */
+    for(unsigned i=0;i<practice.race.count;++i) {
+        practice.intro.detail_order[i]=(uint8_t)i;practice.intro.detail_depth[i]=INT16_MAX;
+    }
+    practice_hud_reset(); /* HUD: race entry state */
+    (void)nm_practice_render_tunnel(&practice,0,0); /* a session reset in a tunnel: the windows' own texture again */
+    NM_COPY(&practice.state.car,&practice.race.cars[0].car);return 1;
+}
+
 static int practice_reset_attract(void) {
     practice.transmission=0; /* The attract's car is the automatic one (intro_scene.h curve 0). */
     nm_memset(&practice.state,0,sizeof(practice.state));
