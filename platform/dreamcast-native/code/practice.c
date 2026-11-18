@@ -100,6 +100,7 @@ static enj_mode_t practice_mode={.name="Native driving practice",.mode_updater=p
  * 5010b0 = intro.object_clock + intro.ticks (include/attract.h). */
 static const uint32_t attract_tick_limit=NM_ATTRACT_TICKS;
 static int practice_credit_pending;
+static unsigned practice_coin_mode(void);
 static uint8_t practice_credits;
 #if defined(_arch_sub_naomi)
 static int practice_test_latched,practice_test_armed;
