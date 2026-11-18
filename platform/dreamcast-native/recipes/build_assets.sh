@@ -900,6 +900,7 @@ assets() {
     cp $W/ui/name.dnm $W/ui/result.dnm $W/ui/finish.dnm $W/ui/sky/sky.dns $d/
     cp $W/ui/finish/*.dt $W/ui/finish/*.dt.pal $d/finish/
     cp $HD/hud/hud/* $d/hud/
+    # Flatten prepare_select.py's temporary select/ output into each runtime select-COUNTRY/ directory.
     for country in usa jpn export; do mkdir -p $d/select-$country; cp $W/select-$country/select/* $d/select-$country/; done
     cp $HD/result-labels/label-*.dt $HD/result-labels/labels.dp $d/labels/
     cp $HD/name/labels/label-*.dt $HD/name/labels/labels.dp $d/name-labels/
