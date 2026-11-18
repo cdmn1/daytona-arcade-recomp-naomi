@@ -111,6 +111,7 @@ static int sram_write(void *context, void *card, const char *name,
 #define EEPROM_SETTINGS_SIZE 10u
 #define EEPROM_SETTINGS_OFFSET 44u
 #define EEPROM_SETTINGS_LENGTH_OFFSET 39u
+/* DUSA v2 extends the original nine-byte block with coin_mode; v1 remains readable. */
 static const uint8_t eeprom_magic[4] = {'D','U','S','A'};
 
 static uint16_t eeprom_get16(const uint8_t *p) {
