@@ -170,6 +170,9 @@ static void render_input(char lines[LINE_COUNT][LINE_BYTES],mie_state_t *s) {
         s->jvs.p1.left,s->jvs.p1.right,s->jvs.p1.sw16,s->jvs.p1.sw2);
     snprintf(lines[8],LINE_BYTES,"P1 START: %u SERVICE: %u",s->jvs.p1.start,s->jvs.p1.service);
     snprintf(lines[9],LINE_BYTES,"DIGITAL: L/R STEER, SW16/SW2 PEDALS");
+    snprintf(lines[10],LINE_BYTES,"COIN1/2: %u/%u PULSE:%02X FAULT:%02X",
+        (unsigned)s->jvs.coin[0].count,(unsigned)s->jvs.coin[1].count,
+        (unsigned)s->jvs.coin_pulse,(unsigned)s->jvs.coin_fault);
     snprintf(lines[11],LINE_BYTES,"PRESS TEST TO RETURN");
 }
 

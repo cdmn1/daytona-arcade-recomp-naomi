@@ -145,9 +145,10 @@ followed immediately by ROMFS; the separate test executable is appended after
 ROMFS and referenced by the Naomi test-segment table. This keeps the main
 program's ROMFS location intact. `combine_naomi_test_rom.py` performs the
 second-stage packaging. It provides INPUT TEST, GAME ASSIGNMENTS, BOOKKEEPING,
-BACKUP DATA CLEAR and EXIT. The four native settings
-(difficulty, attract sound, ANALOG/DIGITAL and P1 D/4 reset) are saved with
-the records in this port's battery-backed Naomi SRAM save area.
+BACKUP DATA CLEAR and EXIT. Difficulty, attract sound, coin mode and
+ANALOG/DIGITAL are stored in the Naomi MIE EEPROM game-settings block;
+records remain in the separate battery-backed Naomi SRAM save area. P1 D/4
+RESET is not exposed as a setting or used as a gameplay action.
 
 The SRAM allocation is `0xA0206000-0xA0207FFF` (physical offset
 `0x6000-0x7FFF`), matching the established native Daytona port's reserved
@@ -168,9 +169,12 @@ block (bytes 44 onward, size at byte 39), using KOS's Naomi CRC helper. The
 block is tagged `DUSA` and versioned; an empty block or this port's own block
 may be updated, but an unknown title's block is never overwritten. Difficulty,
 advertise sound, control scheme and P1 D/4 reset are loaded from this EEPROM
-block at game boot. Race records are stored separately in the dedicated
-battery-backed SRAM save area. This is intentionally distinct from the
-Model 2 XMODEM image described by `tools/settings_eeprom.py`.
+block at game boot. The coin mode is either FREE PLAY or 1 COIN = 1 CREDIT.
+Credits are volatile, start at zero after power-on, and are read from the
+MIE/JVS coin-insertion pulses. The cinematic attract, V.R. demo and title
+screen enforce the same credit rule. The input test displays the live coin
+meters, insert pulses and slot faults. This is intentionally distinct from
+the Model 2 XMODEM image described by `tools/settings_eeprom.py`.
 
 ## Current status
 
