@@ -119,13 +119,21 @@ void nm_practice_credit_poll(void) {
     }
 #endif
 }
-int nm_practice_credit_available(void) { return nm_game_settings()->coin_mode==NM_COIN_FREE_PLAY || practice_credits>0; }
+int nm_practice_credit_available(void) { return practice_coin_mode()==NM_COIN_FREE_PLAY || practice_credits>0; }
 int nm_practice_credit_take(void) {
-    if(nm_game_settings()->coin_mode==NM_COIN_FREE_PLAY) return 1;
+    if(practice_coin_mode()==NM_COIN_FREE_PLAY) return 1;
     if(!practice_credits) return 0;
     --practice_credits;return 1;
 }
 unsigned nm_practice_credit_count(void) { return practice_credits; }
+static unsigned practice_coin_mode(void) {
+#if defined(_arch_sub_naomi)
+    return nm_game_settings()->coin_mode;
+#else
+    /* A Dreamcast build has no JVS coin chute; retain its traditional free-start behaviour. */
+    return NM_COIN_FREE_PLAY;
+#endif
+}
 /* The carried part of the original's car pool (frontend_pool.h): from power-on (nm_practice_run), each scene's exit
  * stores its cars, each scene's start reads it. */
 static nm_entity_pool_t practice_pool;
@@ -630,7 +638,7 @@ int nm_practice_attract_start(void) {
     practice.intro.phase_clock=practice.intro.object_clock-3u; /* 503690/503692 (vr_demo.h; the first loop's 0) */
     /* The 2D layer of phase 2 (5010b0 = the counter now) and of the scene start (phase 3's first iteration). */
     nm_attract_2d_phase2(practice.course,nm_game_records(practice.course),practice_pool.view);
-    nm_attract_2d_credit_state(practice_credits,nm_game_settings()->coin_mode);
+    nm_attract_2d_credit_state(practice_credits,practice_coin_mode());
     nm_attract_2d_cinematic(3,practice.intro.object_clock,0);
     enj_mode_set(&practice_mode);return 1;
 fail:
@@ -687,7 +695,7 @@ static __attribute__((noinline)) int practice_attract_update(uint32_t elapsed_us
         practice.failed=1;
         printf("Native attract rejected tick %lu\n",(unsigned long)practice.state.ticks);
     }
-    nm_attract_2d_credit_state(practice_credits,nm_game_settings()->coin_mode);
+    nm_attract_2d_credit_state(practice_credits,practice_coin_mode());
     (void)nm_attract_2d_render_enqueue();
     return 1;
 }
@@ -2218,7 +2226,7 @@ static void practice_demo_update(void *unused) {
     }
     if(practice.race.ticks>=NM_DEMO_TICKS) { practice_demo_end();return; }
     nm_practice_credit_poll();
-    nm_attract_2d_credit_state(practice_credits,nm_game_settings()->coin_mode);
+    nm_attract_2d_credit_state(practice_credits,practice_coin_mode());
 #if !defined(NATIVE_RACE_SCRIPT) && !defined(NATIVE_DRIVING_TEST)
     enj_ctrlr_state_t **controllers=enj_ctrl_get_states();
     for(size_t i=0;i<enj_ctrl_states_length();++i) if(controllers[i]) {
