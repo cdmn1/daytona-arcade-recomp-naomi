@@ -123,8 +123,11 @@ static void practice_coin_poll_mie(const mie_state_t *mie) {
         const uint16_t inserted=(uint16_t)(current-practice_coin_meter[slot]);
         practice_coin_meter[slot]=current;
         if(paid && !(mie->jvs.coin_fault&(1u<<slot)) && inserted) {
-            const unsigned room=99u-practice_credits;
-            practice_credits=(uint8_t)(practice_credits+(inserted>room?room:inserted));
+            /* COININP is a hardware meter, but some bridge/board combinations
+             * report a large jump for one chute event. The game is configured
+             * for 1 COIN = 1 CREDIT: treat each observed positive meter change
+             * as one coin event, never as the numeric value of the jump. */
+            if(practice_credits<99u) ++practice_credits;
         }
     }
     /* JVS SW7 (P1 SERVICE) is the operator's service-credit button. */
