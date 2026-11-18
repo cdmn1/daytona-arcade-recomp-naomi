@@ -125,7 +125,7 @@ static void test_payload_and_file(void) {
         t.settings.cabinet==NM_CABINET_DELUXE);
     /* Version 2 saves used byte 15 as padding; read them with the factory coin mode. */
     uint8_t version2[NM_SAVE_PAYLOAD_BYTES];memcpy(version2,payload,sizeof(version2));
-    version2[15]=0;version2[4]=2;version2[5]=0;
+    version2[10]=s.settings.control_scheme;version2[15]=0;version2[4]=2;version2[5]=0;
     const uint32_t version2_crc=nm_save_crc32(version2,sizeof(version2)-4);
     version2[sizeof(version2)-4]=(uint8_t)version2_crc;version2[sizeof(version2)-3]=(uint8_t)(version2_crc>>8);
     version2[sizeof(version2)-2]=(uint8_t)(version2_crc>>16);version2[sizeof(version2)-1]=(uint8_t)(version2_crc>>24);
