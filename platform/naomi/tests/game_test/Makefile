@@ -54,7 +54,7 @@ naomi_romfs.o: ../../code/naomi_romfs.c
 	kos-cc $(CFLAGS) -c $< -o $@
 
 sound.o: $(ROOT)/code/audio/sound.c
-	kos-cc $(CFLAGS) -DNM_SOUND_TEST=0 -c $< -o $@
+	kos-cc $(CFLAGS) -c $< -o $@
 
 sfx.o: $(ROOT)/code/audio/sfx.c
 	kos-cc $(CFLAGS) -c $< -o $@
