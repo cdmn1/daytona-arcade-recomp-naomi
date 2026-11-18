@@ -101,7 +101,8 @@ static void test_insert(void) {
 static void test_payload_and_file(void) {
     nm_save_t s,t;nm_save_defaults(&s,seeds);
     s.settings=(nm_settings_t){.difficulty=NM_DIFFICULTY_HARDEST,.advertise_sound=NM_ADVERTISE_OFF,
-        .control_scheme=NM_CONTROL_DIGITAL,.reset_with_p1_d=NM_RESET_BUTTON_OFF,.coin_mode=NM_COIN_FREE_PLAY};
+        .control_scheme=NM_CONTROL_DIGITAL,.reset_with_p1_d=NM_RESET_BUTTON_OFF,.coin_mode=NM_COIN_FREE_PLAY,
+        .cabinet=NM_CABINET_UPLIGHT,.country=NM_COUNTRY_EXPORT};
     s.selected[1]=4;s.records[2][7].name=0x00444342;s.records[2][7].view=2;s.time_attack[5]=9999;
     uint8_t payload[NM_SAVE_PAYLOAD_BYTES];
     assert(nm_save_encode(&s,payload)==NM_SAVE_PAYLOAD_BYTES);
@@ -120,7 +121,8 @@ static void test_payload_and_file(void) {
     assert(nm_save_decode(legacy,sizeof(legacy),&t));
     assert(t.settings.difficulty==s.settings.difficulty && t.settings.advertise_sound==s.settings.advertise_sound &&
         t.settings.control_scheme==NM_CONTROL_ANALOG && t.settings.reset_with_p1_d==NM_RESET_BUTTON_ON &&
-        t.settings.coin_mode==NM_COIN_ONE_CREDIT);
+        t.settings.coin_mode==NM_COIN_ONE_CREDIT && t.settings.country==NM_COUNTRY_JPN &&
+        t.settings.cabinet==NM_CABINET_DELUXE);
     /* Version 2 saves used byte 15 as padding; read them with the factory coin mode. */
     uint8_t version2[NM_SAVE_PAYLOAD_BYTES];memcpy(version2,payload,sizeof(version2));
     version2[15]=0;version2[4]=2;version2[5]=0;
@@ -128,7 +130,17 @@ static void test_payload_and_file(void) {
     version2[sizeof(version2)-4]=(uint8_t)version2_crc;version2[sizeof(version2)-3]=(uint8_t)(version2_crc>>8);
     version2[sizeof(version2)-2]=(uint8_t)(version2_crc>>16);version2[sizeof(version2)-1]=(uint8_t)(version2_crc>>24);
     memset(&t,0,sizeof(t));assert(nm_save_decode(version2,sizeof(version2),&t));
-    assert(t.settings.coin_mode==NM_COIN_ONE_CREDIT);
+    assert(t.settings.coin_mode==NM_COIN_ONE_CREDIT && t.settings.country==NM_COUNTRY_JPN &&
+        t.settings.cabinet==NM_CABINET_DELUXE);
+    /* Version 3 stored coin mode but predates country/cabinet. */
+    uint8_t version3[NM_SAVE_PAYLOAD_BYTES];memcpy(version3,payload,sizeof(version3));
+    version3[10]=s.settings.control_scheme;version3[4]=3;version3[5]=0;
+    const uint32_t version3_crc=nm_save_crc32(version3,sizeof(version3)-4);
+    version3[sizeof(version3)-4]=(uint8_t)version3_crc;version3[sizeof(version3)-3]=(uint8_t)(version3_crc>>8);
+    version3[sizeof(version3)-2]=(uint8_t)(version3_crc>>16);version3[sizeof(version3)-1]=(uint8_t)(version3_crc>>24);
+    memset(&t,0,sizeof(t));assert(nm_save_decode(version3,sizeof(version3),&t));
+    assert(t.settings.coin_mode==NM_COIN_FREE_PLAY && t.settings.country==NM_COUNTRY_JPN &&
+        t.settings.cabinet==NM_CABINET_DELUXE);
     /* Every damaged byte, a short buffer and invalid contents are refused, leaving the target unchanged. */
     for(unsigned i=0;i<sizeof(payload);++i) {
         payload[i]^=0x40;memset(&t,0x5a,sizeof(t));
@@ -140,6 +152,8 @@ static void test_payload_and_file(void) {
     nm_save_t bad=s;bad.records[0][3].rank=9;assert(!nm_save_valid(&bad) && !nm_save_encode(&bad,payload));
     bad=s;bad.settings.difficulty=4;assert(!nm_save_encode(&bad,payload));
     bad=s;bad.settings.coin_mode=NM_COIN_MODE_COUNT;assert(!nm_save_encode(&bad,payload));
+    bad=s;bad.settings.country=NM_COUNTRY_COUNT;assert(!nm_save_encode(&bad,payload));
+    bad=s;bad.settings.cabinet=NM_CABINET_COUNT;assert(!nm_save_encode(&bad,payload));
     bad=s;bad.selected[0]=24;assert(!nm_save_encode(&bad,payload));
     /* The VMS file: header fields as KOS's vmu_hdr_t lays them out, the CRC over the file with its field zero. */
     static uint8_t file[NM_SAVE_FILE_BLOCKS*512u];

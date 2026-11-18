@@ -108,10 +108,10 @@ static int sram_write(void *context, void *card, const char *name,
     return 0;
 }
 
-#define EEPROM_SETTINGS_SIZE 10u
+#define EEPROM_SETTINGS_SIZE 12u
 #define EEPROM_SETTINGS_OFFSET 44u
 #define EEPROM_SETTINGS_LENGTH_OFFSET 39u
-/* DUSA v2 extends the original nine-byte block with coin_mode; v1 remains readable. */
+/* DUSA v3 adds country and cabinet; v1/v2 remain readable. */
 static const uint8_t eeprom_magic[4] = {'D','U','S','A'};
 
 static uint16_t eeprom_get16(const uint8_t *p) {
@@ -124,8 +124,9 @@ static int eeprom_game_block(uint8_t *eeprom, size_t *size_out) {
     if(size < 9u || memcmp(eeprom + EEPROM_SETTINGS_OFFSET,eeprom_magic,4)) return 0;
     const uint16_t crc = mie_eeprom_crc16(eeprom + EEPROM_SETTINGS_OFFSET,size);
     if(eeprom_get16(eeprom + 36) != crc || eeprom_get16(eeprom + 40) != crc) return 0;
-    if(eeprom[EEPROM_SETTINGS_OFFSET + 4] != 1 && eeprom[EEPROM_SETTINGS_OFFSET + 4] != 2) return 0;
-    if(eeprom[EEPROM_SETTINGS_OFFSET + 4] == 2 && size < EEPROM_SETTINGS_SIZE) return 0;
+    const uint8_t version=eeprom[EEPROM_SETTINGS_OFFSET + 4];
+    if(version < 1 || version > 3) return 0;
+    if((version == 2 && size < 10u) || (version == 3 && size < EEPROM_SETTINGS_SIZE)) return 0;
     *size_out = size;
     return 1;
 }
@@ -142,8 +143,12 @@ int nm_naomi_eeprom_load_settings(nm_settings_t *settings) {
         .advertise_sound = eeprom[EEPROM_SETTINGS_OFFSET + 6],
         .control_scheme = eeprom[EEPROM_SETTINGS_OFFSET + 7],
         .reset_with_p1_d = eeprom[EEPROM_SETTINGS_OFFSET + 8],
-        .coin_mode = size >= EEPROM_SETTINGS_SIZE && eeprom[EEPROM_SETTINGS_OFFSET + 4] >= 2 ?
-            eeprom[EEPROM_SETTINGS_OFFSET + 9] : NM_COIN_ONE_CREDIT
+        .coin_mode = eeprom[EEPROM_SETTINGS_OFFSET + 4] >= 2 ?
+            eeprom[EEPROM_SETTINGS_OFFSET + 9] : NM_COIN_ONE_CREDIT,
+        .cabinet = eeprom[EEPROM_SETTINGS_OFFSET + 4] >= 3 ?
+            eeprom[EEPROM_SETTINGS_OFFSET + 10] : NM_CABINET_DELUXE,
+        .country = eeprom[EEPROM_SETTINGS_OFFSET + 4] >= 3 ?
+            eeprom[EEPROM_SETTINGS_OFFSET + 11] : NM_COUNTRY_JPN
     };
     if(!nm_settings_valid(&value)) return 0;
     *settings = value;
@@ -174,12 +179,14 @@ int nm_naomi_eeprom_store_settings(const nm_settings_t *settings) {
     if(existing_size < EEPROM_SETTINGS_SIZE) eeprom[EEPROM_SETTINGS_LENGTH_OFFSET] = EEPROM_SETTINGS_SIZE;
     uint8_t *data = eeprom + EEPROM_SETTINGS_OFFSET;
     memcpy(data,eeprom_magic,sizeof(eeprom_magic));
-    data[4] = 2;
+    data[4] = 3;
     data[5] = settings->difficulty;
     data[6] = settings->advertise_sound;
     data[7] = settings->control_scheme;
     data[8] = settings->reset_with_p1_d;
     data[9] = settings->coin_mode;
+    data[10] = settings->cabinet;
+    data[11] = settings->country;
     (void)existing_size;
 
     mie_eeprom_fix_crc(eeprom);
@@ -195,7 +202,9 @@ int nm_naomi_eeprom_store_settings(const nm_settings_t *settings) {
         .advertise_sound = verify[EEPROM_SETTINGS_OFFSET + 6],
         .control_scheme = verify[EEPROM_SETTINGS_OFFSET + 7],
         .reset_with_p1_d = verify[EEPROM_SETTINGS_OFFSET + 8],
-        .coin_mode = verify[EEPROM_SETTINGS_OFFSET + 9]
+        .coin_mode = verify[EEPROM_SETTINGS_OFFSET + 9],
+        .cabinet = verify[EEPROM_SETTINGS_OFFSET + 10],
+        .country = verify[EEPROM_SETTINGS_OFFSET + 11]
     };
     return nm_settings_valid(&readback) && !memcmp(&readback,settings,sizeof(readback));
 }

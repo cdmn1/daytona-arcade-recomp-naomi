@@ -2,40 +2,34 @@
 #define DAYTONA_NATIVE_SETTINGS_H
 #include <stdint.h>
 
-/* The operator settings of the original that matter to a single-player game (test mode > GAME ASSIGNMENTS;
- * the I/O board's EEPROM, published by 227cf0, tools/settings_eeprom.py has the layout). Values are the
- * original's, the defaults its factory image 23c150:
- *   difficulty       EEPROM +20 -> 53e59c: 0 EASY, 1 NORMAL (factory), 2 HARD, 3 HARDEST. The start time and
- *                    every checkpoint award (3860: 2870304[course][difficulty]; 13574/135a4 the adjustments):
- *                    nm_race_settings and the award input of the player tick take it.
- *   advertise_sound  EEPROM +19 -> 53e5fe: 0 ON (factory), 1 OFF. 1ca8, at the entry of phase 2 (the title):
- *                    ON sends ae1008 (the advertisement music), OFF be1a10 (the music fade).
- *   control_scheme   native-only: ANALOG retains wheel/pedals; DIGITAL maps P1 left/right, A/1 and B/2.
- *   reset_with_p1_d  native-only: whether P1 JVS switch 4 (D/4) resets the current session.
- * The two native-only fields are not fields in the original Daytona/Model 2 EEPROM layout. On Naomi they are
- * stored in this title's separate 9-byte MIE EEPROM game-settings block (naomi_save.c), not at the Model 2 offsets.
- * Not here (presentation the native art does not cover; the factory values are what the port shows):
- * COUNTRY +1b (JPN), CABINET +1a (DELUXE). Coins (+10, +15): the native game has none. The race length is no
- * setting in this revision: the laps are program table 03950[course]. */
+/* Operator settings (original EEPROM fields where present; see tools/settings_eeprom.py).
+ * Country and cabinet retain the original enumerations: COUNTRY +1b (USA/JPN/EXPORT, factory JPN),
+ * CABINET +1a (DELUXE/UPLIGHT, factory DELUXE). Naomi-only controls and coin mode live in this title's
+ * separate DUSA MIE EEPROM block, not at the Model 2 offsets. */
 enum { NM_DIFFICULTY_EASY, NM_DIFFICULTY_NORMAL, NM_DIFFICULTY_HARD, NM_DIFFICULTY_HARDEST, NM_DIFFICULTY_COUNT };
 enum { NM_ADVERTISE_ON, NM_ADVERTISE_OFF, NM_ADVERTISE_COUNT };
 enum { NM_CONTROL_ANALOG, NM_CONTROL_DIGITAL, NM_CONTROL_COUNT };
 enum { NM_COIN_ONE_CREDIT, NM_COIN_FREE_PLAY, NM_COIN_MODE_COUNT };
 enum { NM_RESET_BUTTON_OFF, NM_RESET_BUTTON_ON, NM_RESET_BUTTON_COUNT };
+enum { NM_COUNTRY_USA, NM_COUNTRY_JPN, NM_COUNTRY_EXPORT, NM_COUNTRY_COUNT };
+enum { NM_CABINET_DELUXE, NM_CABINET_UPLIGHT, NM_CABINET_COUNT };
 
 typedef struct {
     uint8_t difficulty, advertise_sound;
     uint8_t control_scheme, reset_with_p1_d, coin_mode;
+    uint8_t cabinet, country;
 } nm_settings_t;
 
 static inline nm_settings_t nm_settings_factory(void) {
     return (nm_settings_t){.difficulty=NM_DIFFICULTY_NORMAL,.advertise_sound=NM_ADVERTISE_ON,
-        .control_scheme=NM_CONTROL_ANALOG,.reset_with_p1_d=NM_RESET_BUTTON_ON,.coin_mode=NM_COIN_ONE_CREDIT};
+        .control_scheme=NM_CONTROL_ANALOG,.reset_with_p1_d=NM_RESET_BUTTON_ON,.coin_mode=NM_COIN_ONE_CREDIT,
+        .cabinet=NM_CABINET_DELUXE,.country=NM_COUNTRY_JPN};
 }
 
 static inline int nm_settings_valid(const nm_settings_t *s) {
     return s && s->difficulty<NM_DIFFICULTY_COUNT && s->advertise_sound<NM_ADVERTISE_COUNT &&
-        s->control_scheme<NM_CONTROL_COUNT && s->reset_with_p1_d<NM_RESET_BUTTON_COUNT && s->coin_mode<NM_COIN_MODE_COUNT;
+        s->control_scheme<NM_CONTROL_COUNT && s->reset_with_p1_d<NM_RESET_BUTTON_COUNT && s->coin_mode<NM_COIN_MODE_COUNT &&
+        s->cabinet<NM_CABINET_COUNT && s->country<NM_COUNTRY_COUNT;
 }
 
 static inline const char *nm_settings_control_name(unsigned scheme) {
@@ -55,6 +49,13 @@ static inline const char *nm_settings_difficulty_name(unsigned difficulty) {
 }
 static inline const char *nm_settings_advertise_name(unsigned advertise) {
     return advertise==NM_ADVERTISE_ON ? "ON" : advertise==NM_ADVERTISE_OFF ? "OFF" : "?";
+}
+static inline const char *nm_settings_country_name(unsigned country) {
+    static const char *const names[NM_COUNTRY_COUNT]={"USA","JPN","EXPORT"};
+    return country<NM_COUNTRY_COUNT ? names[country] : "?";
+}
+static inline const char *nm_settings_cabinet_name(unsigned cabinet) {
+    return cabinet==NM_CABINET_DELUXE ? "DELUXE" : cabinet==NM_CABINET_UPLIGHT ? "UPLIGHT" : "?";
 }
 
 /* A difficulty by its name, either case (tools: trace_race_native --difficulty); -1 when none. */

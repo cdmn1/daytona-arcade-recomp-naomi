@@ -38,7 +38,7 @@ static unsigned sound_selected;
 enum { PAGE_MENU, PAGE_INPUT, PAGE_ASSIGN, PAGE_BOOKKEEPING, PAGE_SOUND, PAGE_BGM, PAGE_SE, PAGE_VOICE, PAGE_CLEAR };
 enum { MENU_INPUT, MENU_ASSIGN, MENU_BOOKKEEPING, MENU_SOUND, MENU_CLEAR, MENU_EXIT, MENU_COUNT };
 enum { SOUND_BGM, SOUND_SE, SOUND_VOICE, SOUND_STOP, SOUND_EXIT, SOUND_COUNT };
-enum { ASSIGN_DIFFICULTY, ASSIGN_ADVERTISE, ASSIGN_COIN_MODE, ASSIGN_CONTROL, ASSIGN_EXIT, ASSIGN_COUNT };
+enum { ASSIGN_DIFFICULTY, ASSIGN_ADVERTISE, ASSIGN_COIN_MODE, ASSIGN_CONTROL, ASSIGN_COUNTRY, ASSIGN_CABINET, ASSIGN_EXIT, ASSIGN_COUNT };
 
 static mie_state_t *mie_status(void) {
     maple_device_t *dev = maple_enum_type(0, MAPLE_FUNC_MIE);
@@ -124,6 +124,10 @@ static void change_assignment(unsigned item) {
         save.settings.coin_mode=(uint8_t)((save.settings.coin_mode+1u)%NM_COIN_MODE_COUNT);break;
     case ASSIGN_CONTROL:
         save.settings.control_scheme=(uint8_t)((save.settings.control_scheme+1u)%NM_CONTROL_COUNT);break;
+    case ASSIGN_COUNTRY:
+        save.settings.country=(uint8_t)((save.settings.country+1u)%NM_COUNTRY_COUNT);break;
+    case ASSIGN_CABINET:
+        save.settings.cabinet=(uint8_t)((save.settings.cabinet+1u)%NM_CABINET_COUNT);break;
     default: break;
     }
     dirty=1;
@@ -149,10 +153,10 @@ static void render_assign(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) 
     snprintf(lines[3],LINE_BYTES,"%s ADVERTISE SOUND %s",selected==1?">":" ",nm_settings_advertise_name(save.settings.advertise_sound));
     snprintf(lines[4],LINE_BYTES,"%s COIN MODE       %s",selected==2?">":" ",nm_settings_coin_name(save.settings.coin_mode));
     snprintf(lines[5],LINE_BYTES,"%s CONTROL SCHEME  %s",selected==3?">":" ",nm_settings_control_name(save.settings.control_scheme));
-    snprintf(lines[6],LINE_BYTES,"%s EXIT",selected==4?">":" ");
-    snprintf(lines[7],LINE_BYTES,"CHANGES ARE SAVED WHEN YOU EXIT");
-    snprintf(lines[8],LINE_BYTES," ");
-    snprintf(lines[9],LINE_BYTES," ");
+    snprintf(lines[6],LINE_BYTES,"%s COUNTRY         %s",selected==4?">":" ",nm_settings_country_name(save.settings.country));
+    snprintf(lines[7],LINE_BYTES,"%s CABINET         %s",selected==5?">":" ",nm_settings_cabinet_name(save.settings.cabinet));
+    snprintf(lines[8],LINE_BYTES,"%s EXIT",selected==6?">":" ");
+    snprintf(lines[9],LINE_BYTES,"CHANGES ARE SAVED WHEN YOU EXIT");
     snprintf(lines[10],LINE_BYTES," ");
     snprintf(lines[11],LINE_BYTES,"%s",save_failed?"SRAM SAVE ERROR":
         eeprom_warning?"EEPROM BLOCK IN USE; SETTINGS SAVED TO SRAM":" ");
