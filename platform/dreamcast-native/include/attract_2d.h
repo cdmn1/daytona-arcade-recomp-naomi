@@ -19,11 +19,11 @@
 #include <string.h>
 #include "attract_2d_data.h"
 #include "race_records.h"
+#include "settings.h"
 #include "nm_mem.h"
 
 enum { NM_A2D_COLUMNS = 64, NM_A2D_ROWS = 64, NM_A2D_LINES = 384 };
-/* The credit display of the factory settings: no coin taken, 53e110 = 3 (the native game has no coins). */
-enum { NM_A2D_CREDITS = 0, NM_A2D_COIN_SETTING = 3 };
+/* Live Naomi credits; the footer shows two digits and one coin per credit. */
 
 typedef struct {
     uint16_t tiles[NM_A2D_COLUMNS*NM_A2D_ROWS]; /* layer A */
@@ -31,6 +31,7 @@ typedef struct {
     uint8_t ranking, demo;                        /* the objects' states: 0 off, then their next routine */
     uint16_t ranking_counter, demo_counter;       /* 2266f8's +6 (the next line revealed), 224e64's +6 */
     uint8_t view;                                 /* 501710 as the demo object writes it */
+    uint8_t credits, coin_mode;
     uint8_t country;                              /* 53e59a & 1 */
     const nm_race_record_t *records;              /* 50138c: the course's records (the first five drawn) */
     uint8_t course;                               /* 501460 */
@@ -118,18 +119,17 @@ static inline void nm_a2d_time(nm_a2d_t *s, uint32_t time, uint32_t at) {
 static inline void nm_a2d_footer(nm_a2d_t *s) {
     (void)nm_a2d_block(s,0x2872a2au,0x10014d8u);
     (void)nm_a2d_block(s,0x2876a84u,0x100163cu);
-    const unsigned credits=NM_A2D_CREDITS,coins=NM_A2D_COIN_SETTING;
-    if(!coins) { nm_a2d_string(s,nm_a2d_text_free_play,0x1001608u);return; }
-    nm_a2d_string(s,credits<2u ? nm_a2d_text_credit : nm_a2d_text_credits,0x1001608u);
-    nm_a2d_number(s,credits,0x1001628u,2);
+    if(s->coin_mode==NM_COIN_FREE_PLAY) { nm_a2d_string(s,nm_a2d_text_free_play,0x1001608u);return; }
+    nm_a2d_string(s,s->credits<2u ? nm_a2d_text_credit : nm_a2d_text_credits,0x1001608u);
+    nm_a2d_number(s,s->credits,0x1001628u,2);
     nm_a2d_char(s,62u,0x1001630u);
-    nm_a2d_number(s,coins,0x1001634u,1);
+    nm_a2d_number(s,1u,0x1001634u,1);
 }
 /* 5588: the footer, then the line: blank while 5010b0 & 8 is clear, else INSERT COIN(S) without a credit. */
 static inline void nm_a2d_insert_coin(nm_a2d_t *s, uint32_t counter) {
     nm_a2d_footer(s);
-    const char *line=!(counter&8u) ? nm_a2d_text_blank_line : !NM_A2D_CREDITS ? nm_a2d_text_insert_coin :
-        NM_A2D_CREDITS<NM_A2D_COIN_SETTING ? nm_a2d_text_insert_more : nm_a2d_text_push_start;
+    const char *line=!(counter&8u) ? nm_a2d_text_blank_line :
+        s->coin_mode!=NM_COIN_FREE_PLAY && !s->credits ? nm_a2d_text_insert_coin : nm_a2d_text_push_start;
     nm_a2d_string(s,line,0x1001318u);
 }
 

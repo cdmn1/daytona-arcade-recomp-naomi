@@ -191,6 +191,11 @@ static inline int nm_practice_advance(nm_practice_t *s, const nm_drive_params_t 
     return 1;
 }
 int nm_practice_run(const char *root);
+/* Naomi coin credits are volatile; poll the MIE meter during front-end modes. */
+void nm_practice_credit_poll(void);
+int nm_practice_credit_available(void);
+int nm_practice_credit_take(void);
+unsigned nm_practice_credit_count(void);
 /* Title owns no course data. After releasing its PVR assets, it calls this
  * to rebuild the existing live-race presentation and replace its mode. */
 int nm_practice_restart_from_title(void);

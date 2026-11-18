@@ -51,7 +51,7 @@ int nm_save_valid(const nm_save_t *save);
 
 /* The payload: little-endian words, a magic, a version and a CRC-32 (IEEE) over everything before it. */
 #define NM_SAVE_PAYLOAD_BYTES 1812u
-#define NM_SAVE_PAYLOAD_VERSION 2u
+#define NM_SAVE_PAYLOAD_VERSION 3u
 size_t nm_save_encode(const nm_save_t *save,uint8_t out[NM_SAVE_PAYLOAD_BYTES]);
 /* 1 and *save filled when the payload is whole and valid; 0 leaves *save as it was. */
 int nm_save_decode(const uint8_t *payload,size_t size,nm_save_t *save);

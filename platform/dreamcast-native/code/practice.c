@@ -100,9 +100,32 @@ static enj_mode_t practice_mode={.name="Native driving practice",.mode_updater=p
  * 5010b0 = intro.object_clock + intro.ticks (include/attract.h). */
 static const uint32_t attract_tick_limit=NM_ATTRACT_TICKS;
 static int practice_credit_pending;
+static uint8_t practice_credits;
 #if defined(_arch_sub_naomi)
-static int practice_test_latched,practice_test_armed,practice_reset_latched;
+static int practice_test_latched,practice_test_armed;
+static void practice_coin_poll_mie(const mie_state_t *mie) {
+    if(!mie || nm_game_settings()->coin_mode==NM_COIN_FREE_PLAY) return;
+    for(unsigned slot=0;slot<2;++slot)
+        if((mie->jvs.coin_pulse&(1u<<slot)) && !(mie->jvs.coin_fault&(1u<<slot)) && practice_credits<99u)
+            ++practice_credits;
+}
 #endif
+void nm_practice_credit_poll(void) {
+#if defined(_arch_sub_naomi)
+    maple_device_t *dev;
+    for(int i=0;(dev=maple_enum_type(i,MAPLE_FUNC_MIE))!=NULL;++i) {
+        mie_state_t *mie=(mie_state_t *)maple_dev_status(dev);
+        if(mie) { practice_coin_poll_mie(mie);break; }
+    }
+#endif
+}
+int nm_practice_credit_available(void) { return nm_game_settings()->coin_mode==NM_COIN_FREE_PLAY || practice_credits>0; }
+int nm_practice_credit_take(void) {
+    if(nm_game_settings()->coin_mode==NM_COIN_FREE_PLAY) return 1;
+    if(!practice_credits) return 0;
+    --practice_credits;return 1;
+}
+unsigned nm_practice_credit_count(void) { return practice_credits; }
 /* The carried part of the original's car pool (frontend_pool.h): from power-on (nm_practice_run), each scene's exit
  * stores its cars, each scene's start reads it. */
 static nm_entity_pool_t practice_pool;
@@ -295,49 +318,6 @@ int nm_practice_results_tick(nm_practice_scene_t *scene,unsigned results_phase,
     ++checkpoint_tick;practice_checkpoint((int32_t)scene->results.timer);
 #endif
     return 1;
-}
-
-static int practice_reset_session(const nm_player_t *previous) {
-    practice.results.mode=practice.results.ticks=0;practice.results.timer=practice.results.penalty=0;practice.results.scroll=0;
-    practice.results.show_labels=0;practice.results.after_podium=0;practice.results.podium_ticks=0;
-    practice.results.announcement_cursor=practice.results.commands=0;practice.results.command_hash=UINT32_C(2166136261);
-    practice_record_published=0;practice.podium=(nm_podium_t){0};
-#ifndef NATIVE_RACE_SCRIPT
-    practice_difficulty=nm_game_settings()->difficulty;
-#endif
-    nm_memset(&practice.state,0,sizeof(practice.state));nm_memset(&practice.intro,0,sizeof(practice.intro));
-    /* The loaded course's start camera, pit cameras and pit stop (race_start_data.h nm_race_course_starts). */
-    const nm_race_course_start_t *tables=nm_race_course_starts+practice.course;
-    if(practice.course>2 || !tables->tracks || practice.road.slot!=practice.course) return 0;
-    practice_cameras.tracks=tables->tracks;practice_cameras.tunnel=tables->tunnel;
-#ifdef NM_RACE_VIEW_DATA
-    practice_cameras.pit_views=tables->pit_views;
-#endif
-    /* e5ac: the grid's body list 286fab0[501464]. */
-    if(!nm_race_scene_start_carried(&practice.race,practice.math,&practice.contact,&practice.road,
-        practice.intro_paths,practice_difficulty,practice.transmission,&practice.marks,practice.road.profile_count,tables->pit,previous)) return 0;
-#ifdef NM_RACE_VIEW_DATA
-    practice.race.view_presets=nm_race_view_presets; /* VR1..VR4 (race_view.h) */
-#endif
-    practice_view_held=practice_view_pad=practice_view_step=0;
-    /* 3980[course] cars (40, 30, 20) from the 40-entry catalogue of 286fac0 rows every course shares. */
-    if(practice.race.count!=practice.road.grid_count || practice.race.count>40 ||
-       sizeof(nm_intro_body_models)/sizeof(nm_intro_body_models[0])!=40) return 0;
-    practice.intro.count=practice.race.count;
-    practice.race_bodies=0;
-    nm_spin_smoke_reset(&practice.spin_smoke);
-    practice.race_commands=0;
-    practice.race_command_hash=UINT32_C(2166136261);
-    nm_race_sound_hook_reset(0);
-    nm_race_sound_hook_course(practice.road.awards); /* the announcer's prefetch: the lap awards */
-    practice.start_pending=0;practice.start_edges=0;practice.shift_pending=0;
-    nm_props_start_edges(&practice.start_edges); /* the START edges Expert's actors see (props_scene.c) */
-    for(unsigned i=0;i<practice.race.count;++i) {
-        practice.intro.detail_order[i]=(uint8_t)i;practice.intro.detail_depth[i]=INT16_MAX;
-    }
-    practice_hud_reset(); /* HUD: race entry state */
-    (void)nm_practice_render_tunnel(&practice,0,0); /* a session reset in a tunnel: the windows' own texture again */
-    NM_COPY(&practice.state.car,&practice.race.cars[0].car);return 1;
 }
 
 static int practice_reset_attract(void) {
@@ -607,6 +587,7 @@ int nm_practice_attract_start(void) {
     practice.intro.phase_clock=practice.intro.object_clock-3u; /* 503690/503692 (vr_demo.h; the first loop's 0) */
     /* The 2D layer of phase 2 (5010b0 = the counter now) and of the scene start (phase 3's first iteration). */
     nm_attract_2d_phase2(practice.course,nm_game_records(practice.course),practice_pool.view);
+    nm_attract_2d_credit_state(practice_credits,nm_game_settings()->coin_mode);
     nm_attract_2d_cinematic(3,practice.intro.object_clock,0);
     enj_mode_set(&practice_mode);return 1;
 fail:
@@ -663,6 +644,7 @@ static __attribute__((noinline)) int practice_attract_update(uint32_t elapsed_us
         practice.failed=1;
         printf("Native attract rejected tick %lu\n",(unsigned long)practice.state.ticks);
     }
+    nm_attract_2d_credit_state(practice_credits,nm_game_settings()->coin_mode);
     (void)nm_attract_2d_render_enqueue();
     return 1;
 }
@@ -895,6 +877,7 @@ static void practice_update(void *unused) {
         native_mie=(mie_state_t *)maple_dev_status(mie_dev);
         if(native_mie) break;
     }
+    practice_coin_poll_mie(native_mie);
     const int test_active=native_mie &&
         (native_mie->jvs.panel.psw.test || native_mie->jvs.system.test);
     /* Ignore TEST if it was already held when the game first sampled JVS. */
@@ -913,21 +896,7 @@ static void practice_update(void *unused) {
         exit(0);
     }
 #endif
-#if defined(_arch_sub_naomi)
-    /* Read the cabinet reset switch independently of enDjinn's controller-state
-     * list. The MIE is the input device on Naomi, not a Maple gamepad; tying
-     * this action to a mapped controller state can silently suppress it.
-     * JVS SW4 (P1 D/4) is SW10 in the MIE's second switch byte. */
-    const int reset_held=native_mie && (native_mie->jvs.p1.raw&MIE_JVS_SW10_BIT);
-    const int reset_pressed=reset_held && !practice_reset_latched;
-    practice_reset_latched=reset_held;
-    const int cabinet_start=native_mie && (native_mie->jvs.p1.raw&MIE_JVS_START_BIT);
-    if(!practice.attract_active && nm_game_settings()->reset_with_p1_d==NM_RESET_BUTTON_ON &&
-       reset_pressed && !cabinet_start) {
-        practice.failed=!practice_reset_session(NULL);
-        if(!practice.failed) practice.failed=!practice_race_detail();
-    }
-#endif
+
     enj_ctrlr_state_t **controllers = enj_ctrl_get_states();
     for (size_t i=0; i<enj_ctrl_states_length(); ++i) if (controllers[i]) {
         const enj_ctrlr_state_t *c = controllers[i];
@@ -953,9 +922,10 @@ static void practice_update(void *unused) {
         controls = nm_controls_decode(nm_steer_table_adc(practice_steer_table,steer_axis),
             accel_axis,brake_axis,practice.controller_last.accel,practice.controller_last.brake);
         ++practice.controller_samples;practice.controller_last=controls;
-        if(practice.attract_active && !practice.podium.phase &&
-           (c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME || c->button.A==ENJ_BUTTON_DOWN_THIS_FRAME)) {
-            /* START/A takes a credit; operator settings are entered only with the cabinet TEST switch. */
+        if(practice.attract_active && !practice.podium.phase && !practice_credit_pending &&
+           (c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME || c->button.A==ENJ_BUTTON_DOWN_THIS_FRAME) &&
+           nm_practice_credit_take()) {
+            /* START/A reserves a credit; the accepted start is consumed on the next cinematic tick. */
             practice_credit_pending=1;
         }
         /* The race, the podium and the results (the attract's START is the credit above).
@@ -2204,12 +2174,15 @@ static void practice_demo_update(void *unused) {
         }
     }
     if(practice.race.ticks>=NM_DEMO_TICKS) { practice_demo_end();return; }
+    nm_practice_credit_poll();
+    nm_attract_2d_credit_state(practice_credits,nm_game_settings()->coin_mode);
 #if !defined(NATIVE_RACE_SCRIPT) && !defined(NATIVE_DRIVING_TEST)
     enj_ctrlr_state_t **controllers=enj_ctrl_get_states();
     for(size_t i=0;i<enj_ctrl_states_length();++i) if(controllers[i]) {
         const enj_ctrlr_state_t *c=controllers[i];
         if(c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME || c->button.A==ENJ_BUTTON_DOWN_THIS_FRAME) {
             if(nm_select_attract_button(c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME,c->ltrigger,c->rtrigger)) return;
+            if(!nm_practice_credit_take()) break;
             const uint32_t credit=practice_demo_counter+1u+practice.race.ticks;
             if(!practice_demo_tick(1)) { practice.failed=1;practice_report_reject();return; }
             nm_attract_2d_off();
@@ -2285,9 +2258,10 @@ int nm_practice_run(const char *root) {
 #endif
     nm_frontend_pool_reset(&practice_pool);
 #if defined(_arch_sub_naomi)
-    practice_test_latched=practice_test_armed=practice_reset_latched=0;
+    practice_test_latched=practice_test_armed=0;
 #endif
     practice_root=root;
+    practice_credits=0;
     if (!enj_mode_push(&practice_mode)) return 1;
     nm_sound_init(root); /* Failure is reported there; the game then runs silent. */
     nm_race_sound_hook_reset(1); /* 18f30: once per power-on, not per race. */

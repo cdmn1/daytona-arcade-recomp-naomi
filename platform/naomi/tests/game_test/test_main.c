@@ -33,7 +33,7 @@ static int eeprom_warning;
 
 enum { PAGE_MENU, PAGE_INPUT, PAGE_ASSIGN, PAGE_BOOKKEEPING, PAGE_CLEAR };
 enum { MENU_INPUT, MENU_ASSIGN, MENU_BOOKKEEPING, MENU_CLEAR, MENU_EXIT, MENU_COUNT };
-enum { ASSIGN_DIFFICULTY, ASSIGN_ADVERTISE, ASSIGN_CONTROL, ASSIGN_RESET, ASSIGN_EXIT, ASSIGN_COUNT };
+enum { ASSIGN_DIFFICULTY, ASSIGN_ADVERTISE, ASSIGN_COIN_MODE, ASSIGN_CONTROL, ASSIGN_EXIT, ASSIGN_COUNT };
 
 static mie_state_t *mie_status(void) {
     maple_device_t *dev = maple_enum_type(0, MAPLE_FUNC_MIE);
@@ -115,10 +115,10 @@ static void change_assignment(unsigned item) {
         save.settings.difficulty=(uint8_t)((save.settings.difficulty+1u)%NM_DIFFICULTY_COUNT);break;
     case ASSIGN_ADVERTISE:
         save.settings.advertise_sound=(uint8_t)((save.settings.advertise_sound+1u)%NM_ADVERTISE_COUNT);break;
+    case ASSIGN_COIN_MODE:
+        save.settings.coin_mode=(uint8_t)((save.settings.coin_mode+1u)%NM_COIN_MODE_COUNT);break;
     case ASSIGN_CONTROL:
         save.settings.control_scheme=(uint8_t)((save.settings.control_scheme+1u)%NM_CONTROL_COUNT);break;
-    case ASSIGN_RESET:
-        save.settings.reset_with_p1_d=(uint8_t)((save.settings.reset_with_p1_d+1u)%NM_RESET_BUTTON_COUNT);break;
     default: break;
     }
     dirty=1;
@@ -133,7 +133,7 @@ static void render_menu(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) {
     lines[7][0]=0;
     snprintf(lines[8],LINE_BYTES,"DIFFICULTY: %s",nm_settings_difficulty_name(save.settings.difficulty));
     snprintf(lines[9],LINE_BYTES,"CONTROL: %s",nm_settings_control_name(save.settings.control_scheme));
-    snprintf(lines[10],LINE_BYTES,"P1 D/4 RESET: %s",nm_settings_reset_name(save.settings.reset_with_p1_d));
+    snprintf(lines[10],LINE_BYTES,"COIN MODE: %s",nm_settings_coin_name(save.settings.coin_mode));
     snprintf(lines[11],LINE_BYTES,"%s",save_failed?"SAVE ERROR - CHECK SRAM":
         eeprom_warning?"EEPROM NOT UPDATED; SRAM SAVE IS ACTIVE":"EXIT RETURNS TO NAOMI SYSTEM MENU");
 }
@@ -143,8 +143,8 @@ static void render_assign(char lines[LINE_COUNT][LINE_BYTES],unsigned selected) 
     snprintf(lines[1],LINE_BYTES,"SERVICE: SELECT / TEST: CHANGE");
     snprintf(lines[2],LINE_BYTES,"%s DIFFICULTY     %s",selected==0?">":" ",nm_settings_difficulty_name(save.settings.difficulty));
     snprintf(lines[3],LINE_BYTES,"%s ADVERTISE SOUND %s",selected==1?">":" ",nm_settings_advertise_name(save.settings.advertise_sound));
-    snprintf(lines[4],LINE_BYTES,"%s CONTROL SCHEME  %s",selected==2?">":" ",nm_settings_control_name(save.settings.control_scheme));
-    snprintf(lines[5],LINE_BYTES,"%s RESET WITH P1 D/4 %s",selected==3?">":" ",nm_settings_reset_name(save.settings.reset_with_p1_d));
+    snprintf(lines[4],LINE_BYTES,"%s COIN MODE       %s",selected==2?">":" ",nm_settings_coin_name(save.settings.coin_mode));
+    snprintf(lines[5],LINE_BYTES,"%s CONTROL SCHEME  %s",selected==3?">":" ",nm_settings_control_name(save.settings.control_scheme));
     snprintf(lines[6],LINE_BYTES,"%s EXIT",selected==4?">":" ");
     snprintf(lines[7],LINE_BYTES,"CHANGES ARE SAVED WHEN YOU EXIT");
     snprintf(lines[8],LINE_BYTES," ");

@@ -245,6 +245,11 @@ static void render_layer(void *unused) {
     }
 }
 
+void nm_attract_2d_credit_state(unsigned credits, unsigned coin_mode) {
+    layer.credits=(uint8_t)(credits>99u ? 99u : credits);
+    layer.coin_mode=(uint8_t)(coin_mode<NM_COIN_MODE_COUNT ? coin_mode : NM_COIN_ONE_CREDIT);
+}
+
 int nm_attract_2d_render_enqueue(void) {
     if (loaded && shown) {
         records_update();
@@ -263,6 +268,7 @@ void nm_attract_2d_render_unload(void) {}
 void nm_attract_2d_phase2(unsigned course, const nm_race_record_t *records, unsigned view) {
     (void)course; (void)records; (void)view;
 }
+void nm_attract_2d_credit_state(unsigned credits, unsigned coin_mode) { (void)credits; (void)coin_mode; }
 void nm_attract_2d_cinematic(unsigned phase, uint32_t counter, int last) { (void)phase; (void)counter; (void)last; }
 void nm_attract_2d_demo(unsigned phase, uint32_t counter) { (void)phase; (void)counter; }
 void nm_attract_2d_off(void) {}

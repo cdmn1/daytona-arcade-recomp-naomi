@@ -29,6 +29,7 @@ static uint32_t frames,late,longest_us; /* the title's frames while the attract 
 static void title_update(void *unused) {
     (void)unused;
     nm_sound_update();
+    nm_practice_credit_poll();
     const uint64_t now=timer_ns_gettime64()/1000;
     uint64_t elapsed=last_us ? now-last_us : 0;last_us=now;
     ++frames;
@@ -50,6 +51,7 @@ static void title_update(void *unused) {
         }
 #endif
         if(c->button.START==ENJ_BUTTON_DOWN_THIS_FRAME || c->button.A==ENJ_BUTTON_DOWN_THIS_FRAME) {
+            if(!nm_practice_credit_take()) break;
             const uint32_t counter=nm_frontend_counter()+ticks+1u;
             if(!nm_title_render_release()) { enj_state_flag_shutdown(NULL);return; }
             nm_practice_attract_abandon();

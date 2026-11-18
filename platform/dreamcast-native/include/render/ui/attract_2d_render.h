@@ -19,6 +19,8 @@ int nm_attract_2d_render_load(const char *root);
 void nm_attract_2d_render_unload(void);
 /* Phase 2 of a loop: COURSE (501460), its RECORDS (the first five are drawn), VIEW (501710 now). */
 void nm_attract_2d_phase2(unsigned course, const nm_race_record_t *records, unsigned view);
+/* Live credit footer and prompt; credits are volatile and capped to the two displayed digits. */
+void nm_attract_2d_credit_state(unsigned credits, unsigned coin_mode);
 /* A cinematic iteration (the scene start: phase 3) with its 5010b0; LAST: phase 5's last. */
 void nm_attract_2d_cinematic(unsigned phase, uint32_t counter, int last);
 /* A demo iteration: phase 6 (its start), then 7. */

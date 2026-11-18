@@ -20,25 +20,29 @@
 enum { NM_DIFFICULTY_EASY, NM_DIFFICULTY_NORMAL, NM_DIFFICULTY_HARD, NM_DIFFICULTY_HARDEST, NM_DIFFICULTY_COUNT };
 enum { NM_ADVERTISE_ON, NM_ADVERTISE_OFF, NM_ADVERTISE_COUNT };
 enum { NM_CONTROL_ANALOG, NM_CONTROL_DIGITAL, NM_CONTROL_COUNT };
+enum { NM_COIN_ONE_CREDIT, NM_COIN_FREE_PLAY, NM_COIN_MODE_COUNT };
 enum { NM_RESET_BUTTON_OFF, NM_RESET_BUTTON_ON, NM_RESET_BUTTON_COUNT };
 
 typedef struct {
     uint8_t difficulty, advertise_sound;
-    uint8_t control_scheme, reset_with_p1_d;
+    uint8_t control_scheme, reset_with_p1_d, coin_mode;
 } nm_settings_t;
 
 static inline nm_settings_t nm_settings_factory(void) {
     return (nm_settings_t){.difficulty=NM_DIFFICULTY_NORMAL,.advertise_sound=NM_ADVERTISE_ON,
-        .control_scheme=NM_CONTROL_ANALOG,.reset_with_p1_d=NM_RESET_BUTTON_ON};
+        .control_scheme=NM_CONTROL_ANALOG,.reset_with_p1_d=NM_RESET_BUTTON_ON,.coin_mode=NM_COIN_ONE_CREDIT};
 }
 
 static inline int nm_settings_valid(const nm_settings_t *s) {
     return s && s->difficulty<NM_DIFFICULTY_COUNT && s->advertise_sound<NM_ADVERTISE_COUNT &&
-        s->control_scheme<NM_CONTROL_COUNT && s->reset_with_p1_d<NM_RESET_BUTTON_COUNT;
+        s->control_scheme<NM_CONTROL_COUNT && s->reset_with_p1_d<NM_RESET_BUTTON_COUNT && s->coin_mode<NM_COIN_MODE_COUNT;
 }
 
 static inline const char *nm_settings_control_name(unsigned scheme) {
     return scheme==NM_CONTROL_ANALOG ? "ANALOG" : scheme==NM_CONTROL_DIGITAL ? "DIGITAL" : "?";
+}
+static inline const char *nm_settings_coin_name(unsigned mode) {
+    return mode==NM_COIN_FREE_PLAY ? "FREE PLAY" : mode==NM_COIN_ONE_CREDIT ? "1 COIN = 1 CREDIT" : "?";
 }
 static inline const char *nm_settings_reset_name(unsigned enabled) {
     return enabled==NM_RESET_BUTTON_ON ? "ON" : enabled==NM_RESET_BUTTON_OFF ? "OFF" : "?";
