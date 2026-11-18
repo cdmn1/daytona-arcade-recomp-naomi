@@ -226,7 +226,7 @@ jobs:
           mkdir -p "$KOS_PORTS/zlib/dist"
           curl --fail --location --retry 3 --retry-all-errors --connect-timeout 30 --max-time 180 \
             --output "$KOS_PORTS/zlib/dist/zlib-1.4.tar.gz" \
-            https://zlib.net/fossils/zlib-1.4.tar.gz
+            https://zlib.net/zlib-1.4.tar.gz
           make -C "$KOS_PORTS/zlib" install
           # kos-ports installs headers under include/zlib and the port's
           # private inst directory, not directly in include/.
