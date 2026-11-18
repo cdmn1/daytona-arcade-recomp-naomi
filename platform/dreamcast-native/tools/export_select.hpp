@@ -209,13 +209,10 @@ struct SelectExport {
             // Course panels are 152 apart from x 24 (144 wide), the ring reaches about 12 past them.
             const unsigned left = maps ? 152 * cursor : 248 * cursor, width = maps ? 188 : 248;
             const unsigned right = std::min(left + width, unsigned(rt::Video::W)), top = maps ? 56 : 40, bottom = maps ? 167 : 200;
-            // The ring is one flat colour (pen 10d3): keep the commonest drawn colour only (the panel the
-            // screen shows may be the other blink variant than the layers hold: one frame of display lag).
-            std::map<uint32_t, unsigned> colours;
-            for (unsigned y = top; y < bottom; ++y) for (unsigned x = left; x < right; ++x)
-                if (drawn[y * rt::Video::W + x]) ++colours[screen.pixels[y * rt::Video::W + x]];
-            uint32_t ring = 0; unsigned most = 0;
-            for (const auto &[colour, n] : colours) if (n > most) { most = n; ring = colour; }
+            // The ring is drawn with System24 palette pen 0x10d3. Read that pen directly:
+            // choosing the most common colour in this box can mistake a large area of a car for the ring,
+            // which happens with some regional car palettes (notably EXPORT).
+            const uint32_t ring = v.system24_pen(0x10d3) | 0xff000000u;
             for (unsigned y = 0; y < rt::Video::H; ++y) for (unsigned x = 0; x < rt::Video::W; ++x)
                 if (screen.pixels[y * rt::Video::W + x] != ring) drawn[y * rt::Video::W + x] = 0;
             if (!box(left, right, top, bottom, r)) throw std::runtime_error("select frame not drawn");
