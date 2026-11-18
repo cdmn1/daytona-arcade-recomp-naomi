@@ -913,6 +913,21 @@ static void practice_update(void *unused) {
         exit(0);
     }
 #endif
+#if defined(_arch_sub_naomi)
+    /* Read the cabinet reset switch independently of enDjinn's controller-state
+     * list. The MIE is the input device on Naomi, not a Maple gamepad; tying
+     * this action to a mapped controller state can silently suppress it.
+     * JVS SW4 (P1 D/4) is SW10 in the MIE's second switch byte. */
+    const int reset_held=native_mie && (native_mie->jvs.p1.raw&MIE_JVS_SW10_BIT);
+    const int reset_pressed=reset_held && !practice_reset_latched;
+    practice_reset_latched=reset_held;
+    const int cabinet_start=native_mie && (native_mie->jvs.p1.raw&MIE_JVS_START_BIT);
+    if(!practice.attract_active && nm_game_settings()->reset_with_p1_d==NM_RESET_BUTTON_ON &&
+       reset_pressed && !cabinet_start) {
+        practice.failed=!practice_reset_session(NULL);
+        if(!practice.failed) practice.failed=!practice_race_detail();
+    }
+#endif
     enj_ctrlr_state_t **controllers = enj_ctrl_get_states();
     for (size_t i=0; i<enj_ctrl_states_length(); ++i) if (controllers[i]) {
         const enj_ctrlr_state_t *c = controllers[i];
@@ -965,20 +980,6 @@ static void practice_update(void *unused) {
                 practice_view_pad=0;
 #endif
             } else practice_view_buttons(c);
-        }
-        /* P1 D/4 is the observed session-reset input. It is independent of B/2, which is the digital brake.
-         * The operator can disable reset in Game Test; START+B remains the inspector chord. */
-#if defined(_arch_sub_naomi)
-        const int reset_held=native_mie && (native_mie->jvs.p1.raw&MIE_JVS_SW10_BIT);
-        const int reset_pressed=reset_held && !practice_reset_latched;
-        practice_reset_latched=reset_held;
-#else
-        const int reset_pressed=c->button.B==ENJ_BUTTON_DOWN_THIS_FRAME;
-#endif
-        if (!practice.attract_active && nm_game_settings()->reset_with_p1_d==NM_RESET_BUTTON_ON &&
-            reset_pressed && !(c->button.START&1)) {
-            practice.failed = !practice_reset_session(NULL);
-            if(!practice.failed) practice.failed=!practice_race_detail();
         }
         break;
     }
