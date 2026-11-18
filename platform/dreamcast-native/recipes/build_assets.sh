@@ -647,7 +647,7 @@ ui_packs() {
   python3 $T/prepare_scene.py $X/title $HD/title --title-program $R/program.bin
 }
 step ui_packs ui_packs
-DESC_select_pack="USA, JPN and EXPORT select screens: PAL4 textures and select.dsl, each checked against its original screens"
+DESC_select_pack="USA, JPN and EXPORT select screens: PAL4 textures and select.dsl, each checked against its original screens (host preview mirrors the runtime select-COUNTRY layout)"
 select_pack() {
   local country
   for country in usa jpn export; do
