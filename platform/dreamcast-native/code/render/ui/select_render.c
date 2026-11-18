@@ -126,7 +126,7 @@ int nm_select_render_load(const char *root, unsigned country) {
     if (country >= sizeof(country_name) / sizeof(country_name[0])) country = 1;
     char path[512];
     void *layout = NULL; size_t size = 0;
-    if (snprintf(path, sizeof(path), "%sselect-%s/select/select.dsl", root, country_name[country]) >= (int)sizeof(path) || !read_file(path, &layout, &size)) {
+    if (snprintf(path, sizeof(path), "%sselect-%s/select.dsl", root, country_name[country]) >= (int)sizeof(path) || !read_file(path, &layout, &size)) {
         printf("FAIL: select screens: %s missing (asset set without the select art)\n", path);
         return 0;
     }
@@ -150,7 +150,7 @@ int nm_select_render_load(const char *root, unsigned country) {
     for (unsigned i = 0; i < textures_n; ++i) {
         const select_texture_t *t = texture_info + i;
         void *blob = NULL; size_t bytes = 0;
-        if (t->palette >= palettes_n || snprintf(path, sizeof(path), "%sselect-%s/select/tex-%u.dt", root, country_name[country], i) >= (int)sizeof(path) ||
+        if (t->palette >= palettes_n || snprintf(path, sizeof(path), "%sselect-%s/tex-%u.dt", root, country_name[country], i) >= (int)sizeof(path) ||
             !read_file(path, &blob, &bytes) || bytes != t->bytes) { free(blob); goto fail; }
         const int ok = enj_texture_load_blob(blob, textures + i);
         free(blob);
