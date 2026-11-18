@@ -57,7 +57,7 @@ def render(preview, assets, pose):
     for lst, tex, v, z in sorted(quads, key=lambda q: q[0] != 0):  # opaque list first, then punch-through
         name, bank, opaque = textures[tex]
         if tex not in decoded:
-            decoded[tex] = decode_pal4(assets / 'select' / name)
+            decoded[tex] = decode_pal4(assets / 'select-usa' / name)
         tw, th, pens = decoded[tex]
         xs, ys = [v[0], v[4], v[8], v[12]], [v[1], v[5], v[9], v[13]]
         us, vs = [v[2], v[6], v[10], v[14]], [v[3], v[7], v[11], v[15]]
@@ -96,13 +96,19 @@ def main():
         (stub / 'malloc.h').write_text('#include <stdlib.h>\nstatic inline void *memalign(size_t a,size_t n) '
                                        '{ void *p=NULL; return posix_memalign(&p,a,n) ? NULL : p; }\n')
         preview = Path(tmp) / 'preview'
+        # Mirror the runtime layout: prepare_select.py emits select/, but the renderer loads select-COUNTRY/.
+        runtime_root = Path(tmp) / 'runtime'
+        (runtime_root / 'select-usa').mkdir(parents=True)
+        import shutil
+        for asset in (assets / 'select').iterdir():
+            shutil.copy2(asset, runtime_root / 'select-usa' / asset.name)
         subprocess.run(['cc', '-std=gnu11', '-Wall', '-Wno-unused-function', '-fsanitize=address,undefined',
                         '-I', str(stub), '-I', str(HERE.parent / 'include'), str(HERE / 'select_preview.c'),
                         '-o', str(preview)], check=True)
         for screen in ('course', 'transmission', 'gentlemen'):
             d = export / screen
             pose = [l for l in (d / 'pose.txt').read_text().splitlines() if not l.startswith('#')][0].split()[:7]
-            native = render(preview, assets, pose)
+            native = render(preview, runtime_root, pose)
             w, h, original = tga(d / 'screen.tga')
             _, _, composite = tga(d / 'composite.tga')
             maps = set()
