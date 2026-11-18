@@ -33,7 +33,6 @@
 typedef struct {
     nm_settings_t settings;
     uint8_t selected[NM_SAVE_TABLES];
-    uint8_t zero[1];                     /* payload header padding; no implicit padding */
     nm_race_record_t records[NM_SAVE_TABLES][NM_SAVE_SLOTS];
     uint32_t time_attack[NM_SAVE_TIME_ATTACK_WORDS];
 } nm_save_t;

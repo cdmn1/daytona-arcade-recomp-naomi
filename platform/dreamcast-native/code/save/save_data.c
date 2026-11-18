@@ -13,7 +13,6 @@ static const uint32_t time_attack_reset[8]={
 void nm_save_defaults(nm_save_t *save,const nm_race_record_seed_t seeds[NM_SAVE_TABLES][NM_SAVE_SLOTS]) {
     nm_memset(save,0xff,sizeof(*save));
     save->settings=nm_settings_factory();
-    nm_memset(save->zero,0,sizeof(save->zero));
     for(unsigned t=0;t<NM_SAVE_TABLES;++t) {
         nm_race_records_reset(save->records[t],seeds[t]);
         save->selected[t]=NM_SAVE_NO_SLOT;
@@ -102,7 +101,6 @@ int nm_save_decode(const uint8_t *in,size_t size,nm_save_t *save) {
             .control_scheme=in[10],.reset_with_p1_d=in[11],.coin_mode=in[15]};
         nm_memcpy(s.selected,in+12,NM_SAVE_TABLES);
     }
-    nm_memset(s.zero,0,sizeof(s.zero));
     const uint8_t *p=in+PAYLOAD_RECORDS;
     for(unsigned t=0;t<NM_SAVE_TABLES;++t) for(unsigned i=0;i<NM_SAVE_SLOTS;++i,p+=24)
         s.records[t][i]=(nm_race_record_t){.rank=get32(p),.time=get32(p+4),.view=get32(p+8),
