@@ -137,7 +137,6 @@ def main():
                 from PIL import Image
                 png.mkdir(exist_ok=True)
                 image = Image.new('RGB', (992, 384))
-                image.putdata([((c or 0) >> 16 & 255, (c or 0) >> 8 & 255, (c or 0) & 255) for c in native] + [], )
                 left = Image.new('RGB', (496, 384)); left.putdata([((c or 0) >> 16 & 255, (c or 0) >> 8 & 255, (c or 0) & 255) for c in native])
                 right = Image.new('RGB', (496, 384)); right.putdata([(p[2], p[1], p[0]) for p in original])
                 image.paste(left, (0, 0)); image.paste(right, (496, 0))
