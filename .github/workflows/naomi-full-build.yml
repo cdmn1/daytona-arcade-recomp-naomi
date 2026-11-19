@@ -394,7 +394,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: select-polygon-diagnostic
-          path: build/naomi-assets/work/export/select-export-rte/transmission/frame_polygons.txt
+          path: |
+            build/naomi-assets/work/export/select-export-rte/transmission/frame_polygons.txt
+            build/naomi-assets/work/export/select-export-rte/transmission/frame.tga
+            build/naomi-assets/work/export/select-export-rte/transmission/frame.txt
+            build/naomi-assets/work/export/select-export-rte/transmission/screen.tga
+            build/naomi-assets/work/export/select-export-rte/transmission/composite.tga
+            build/naomi-assets/work/select-export/preview/transmission.png
           if-no-files-found: warn
           retention-days: 3
 
