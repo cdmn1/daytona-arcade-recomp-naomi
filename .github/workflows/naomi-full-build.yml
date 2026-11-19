@@ -400,6 +400,10 @@ jobs:
             build/naomi-assets/work/export/select-export-rte/transmission/frame.txt
             build/naomi-assets/work/export/select-export-rte/transmission/screen.tga
             build/naomi-assets/work/export/select-export-rte/transmission/composite.tga
+            build/naomi-assets/work/export/select-export-rte/transmission/pose.txt
+            build/naomi-assets/work/export/select-export-rte/transmission/sprites.txt
+            build/naomi-assets/work/export/select-export-rte/transmission/sprite_*.tga
+            build/naomi-assets/work/export/select-export-rte/transmission/layer_0.tga
             build/naomi-assets/work/select-export/preview/transmission.png
           if-no-files-found: warn
           retention-days: 3
