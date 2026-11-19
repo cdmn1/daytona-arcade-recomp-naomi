@@ -12,7 +12,7 @@
 // sprites.txt: `role x y width height file` for those dynamic pieces, rendered from their authored
 // blocks (18e2c: int16 tile base, int16 format, u32 rows, u32 width, then the tiles) with the frame's
 // character RAM and palette:
-//   panels      23add4 / 23ae88 rows (44 bytes: +c column, +10 row, +14/+18 blocks A/B per language
+//   panels      23add4 / 23ae88 rows (44 bytes: +c column, +10 row, +14/+18 blocks A/B per country
 //               53e59a, 8 bytes apart), 225fa8; role 16+2*slot+variant (course), 24+2*slot+variant
 //   digits      18b44: tiles 8500 + 12*digit .. +11, 3x4, two of them right-aligned at tile 10001ec;
 //               role 32+digit, 42 the blank tile 8280
@@ -147,8 +147,7 @@ struct SelectExport {
         tools::dreamcast::write_tga(c.dir / "layer_2.tga", background);
         tools::dreamcast::write_tga(c.dir / "layer_0.tga", foreground);
         tools::dreamcast::TextureImage screen{rt::Video::W, rt::Video::H, false, v.screen()};
-        for (auto &p : screen.pixels) p |= 0xff000000u;
-        tools::dreamcast::write_tga(c.dir / "screen.tga", screen);
+        for (auto &p : screen.pixels) p |= 0xff000000u;        tools::dreamcast::write_tga(c.dir / "screen.tga", screen);
         tools::dreamcast::write_tga(c.dir / "composite.tga", composite);
         // 3D pixels: the screen where it is not the 2D composite.
         std::vector<uint8_t> drawn(rt::Video::W * rt::Video::H);
@@ -295,10 +294,9 @@ struct SelectExport {
         in_state = state == previous_state ? in_state + 1 : 0;
         previous_state = state;
         const bool steady = b0 >= 1 && b0 <= 4;
-        const unsigned language = b.read_word(0x53e59a) & 1, cursor = b.read_word(0x501468);
+        const unsigned country = b.read_byte(0x53e59a), cursor = b.read_word(0x501468);
         same_cursor = cursor == previous_cursor ? same_cursor + 1 : 0;
-        previous_cursor = cursor;
-        // The chosen course's map lit: maps of every cursor position the run holds for 8+ iterations.
+        previous_cursor = cursor;        // The chosen course's map lit: maps of every cursor position the run holds for 8+ iterations.
         if (course && state == 1 && in_state >= 80 && cursor < 3 && !cursor_maps[cursor] && same_cursor >= 8) {
             const std::string name = "course_cursor" + std::to_string(cursor);
             Capture c = begin(name.c_str());
@@ -312,7 +310,7 @@ struct SelectExport {
                 const uint32_t row = 0x23add4 + 44 * slot;
                 const uint32_t tile = 0x1000000u + 2 * b.read_dword(row + 0xc) + 128 * b.read_dword(row + 0x10);
                 for (unsigned variant = 0; variant < 2; ++variant)
-                    block_sprite(c, b, 16 + 2 * slot + variant, b.read_dword(row + 0x14 + 4 * variant + 8 * language), tile, true);
+                    block_sprite(c, b, 16 + 2 * slot + variant, b.read_dword(row + 0x14 + 4 * variant + 8 * country), tile, true);
             }
             digits(c, b);
             layers(c, b, true, true);
@@ -325,7 +323,7 @@ struct SelectExport {
                 const uint32_t row = 0x23ae88 + 44 * slot;
                 const uint32_t tile = 0x1000000u + 2 * b.read_dword(row + 0xc) + 128 * b.read_dword(row + 0x10);
                 for (unsigned variant = 0; variant < 2; ++variant)
-                    block_sprite(c, b, 24 + 2 * slot + variant, b.read_dword(row + 0x14 + 4 * variant + 8 * language), tile, true);
+                    block_sprite(c, b, 24 + 2 * slot + variant, b.read_dword(row + 0x14 + 4 * variant + 8 * country), tile, true);
             }
             for (unsigned cursor = 0; cursor < 2; ++cursor)
                 block_sprite(c, b, 48 + cursor, b.read_dword(0x23af9c + 4 * cursor), 0x10007ae, true);
