@@ -209,9 +209,30 @@ struct SelectExport {
             // Course panels are 152 apart from x 24 (144 wide), the ring reaches about 12 past them.
             const unsigned left = maps ? 152 * cursor : 248 * cursor, width = maps ? 188 : 248;
             const unsigned right = std::min(left + width, unsigned(rt::Video::W)), top = maps ? 56 : 40, bottom = maps ? 167 : 200;
-            // The ring is drawn by the 3D rasterizer from palette entry 0x10d3.
-            // This is a raster palette index, not a tilemap pixel pen; the latter
-            // is limited to 12 bits by System24's 8-bit colour bank and 4-bit pixel.
+            // Record the actual display-list polygons intersecting the frame panel.
+            // This is diagnostic only: it does not affect the captured image or comparison.
+            {
+                std::ofstream diag(c.dir / "frame_polygons.txt");
+                diag << "# index z window renderer vertices colorbase luma header0 header1 header2 header3 minx miny maxx maxy\\n";
+                const auto &polys = v.gpu_polys();
+                for (size_t i = 0; i < polys.size(); ++i) {
+                    const auto &p = polys[i];
+                    const int renderer = (p.texheader[0] >> 13) & 3;
+                    float minx = p.v[0].x, maxx = minx, miny = p.v[0].y, maxy = miny;
+                    for (unsigned k = 1; k < p.num_vertices; ++k) {
+                        minx = std::min(minx, p.v[k].x); maxx = std::max(maxx, p.v[k].x);
+                        miny = std::min(miny, p.v[k].y); maxy = std::max(maxy, p.v[k].y);
+                    }
+                    if (maxx < float(left) || minx >= float(right) || maxy < float(top) || miny >= float(bottom)) continue;
+                    diag << i << ' ' << p.z << ' ' << unsigned(p.window) << ' ' << renderer << ' '
+                         << unsigned(p.num_vertices) << ' ' << ((p.texheader[3] >> 6) & 0x3ff) << ' '
+                         << unsigned(p.luma) << ' ' << std::hex << p.texheader[0] << ' ' << p.texheader[1] << ' '
+                         << p.texheader[2] << ' ' << p.texheader[3] << std::dec << ' '
+                         << minx << ' ' << miny << ' ' << maxx << ' ' << maxy << '\\n';
+                }
+            }
+            // Do not infer the ring colour from a System24 tilemap palette entry.
+            // The 3D rasterizer shades polygon colours from polygon state and video RAM.
             const uint32_t ring = v.system24_pen(0x10d3) | 0xff000000u;
             for (unsigned y = 0; y < rt::Video::H; ++y) for (unsigned x = 0; x < rt::Video::W; ++x)
                 if (screen.pixels[y * rt::Video::W + x] != ring) drawn[y * rt::Video::W + x] = 0;
