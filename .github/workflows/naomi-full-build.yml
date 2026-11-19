@@ -389,6 +389,15 @@ jobs:
             input/daytona93-complete.zip build/naomi-assets \
             --music input/daytona-music.zip --jobs 2
 
+      - name: Upload select polygon diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: select-polygon-diagnostic
+          path: build/naomi-assets/work/select-export-rte/transmission/frame_polygons.txt
+          if-no-files-found: warn
+          retention-days: 3
+
       - name: Save generated Daytona asset cache
         if: steps.asset-cache.outputs.cache-hit != 'true' && success()
         uses: actions/cache/save@v4
