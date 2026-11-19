@@ -653,7 +653,7 @@ select_pack() {
   for country in usa jpn export; do
     fresh $W/select-$country
     python3 $T/prepare_select.py $X/select-$country-rte $X/select-$country-adv $X/select-$country-exp $W/select-$country
-    python3 $DN/tests/test_select_render.py $W/select-$country $X/select-$country-rte
+    python3 $DN/tests/test_select_render.py $W/select-$country $X/select-$country-rte $W/select-$country/preview
   done
 }
 step select_pack select_pack
