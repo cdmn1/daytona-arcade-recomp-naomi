@@ -214,7 +214,10 @@ struct SelectExport {
             {
                 std::ofstream diag(c.dir / "frame_polygons.txt");
                 const auto &polys = v.gpu_polys();
-                diag << "# index z window vertices luma header0 header1 header2 header3 x y pz pu pv ...\n";
+                diag << "# index z window vertices luma headers center_x center_y crtc_x crtc_y minx miny maxx maxy colors x y pz pu pv ...\n";
+                diag << "# crtc " << v.crtc_x() << ' ' << v.crtc_y()
+                     << " mismatch_pixel_130_149=0x" << std::hex << screen.pixels[149 * rt::Video::W + 130]
+                     << std::dec << '\n';
                 for (size_t i = 0; i < polys.size(); ++i) {
                     const auto &p = polys[i];
                     auto project_x = [&](const rt::GeoVertex &vtx) {
@@ -232,7 +235,20 @@ struct SelectExport {
                     if (maxx < float(left) || minx >= float(right) || maxy < float(top) || miny >= float(bottom)) continue;
                     diag << i << ' ' << p.z << ' ' << unsigned(p.window) << ' ' << unsigned(p.num_vertices) << ' '
                          << unsigned(p.luma) << ' ' << p.texheader[0] << ' ' << p.texheader[1] << ' '
-                         << p.texheader[2] << ' ' << p.texheader[3];
+                         << p.texheader[2] << ' ' << p.texheader[3] << ' ' << p.center[0] << ' ' << p.center[1]
+                         << ' ' << v.crtc_x() << ' ' << v.crtc_y() << ' ' << minx << ' ' << miny << ' ' << maxx << ' ' << maxy;
+                    std::map<uint32_t, unsigned> colors;
+                    const int x0 = std::max(int(left), int(std::floor(minx)));
+                    const int x1 = std::min(int(right), int(std::ceil(maxx)) + 1);
+                    const int y0 = std::max(int(top), int(std::floor(miny)));
+                    const int y1 = std::min(int(bottom), int(std::ceil(maxy)) + 1);
+                    for (int y = y0; y < y1; ++y) for (int x = x0; x < x1; ++x) {
+                        const size_t at = size_t(y) * rt::Video::W + size_t(x);
+                        if (drawn[at]) ++colors[screen.pixels[at] & 0xffffffu];
+                    }
+                    diag << " colors";
+                    for (const auto &[color, count] : colors)
+                        diag << ' ' << std::hex << color << std::dec << ':' << count;
                     for (unsigned k = 0; k < p.num_vertices; ++k)
                         diag << ' ' << p.v[k].x << ' ' << p.v[k].y << ' ' << p.v[k].p[0]
                              << ' ' << p.v[k].p[1] << ' ' << p.v[k].p[2];
