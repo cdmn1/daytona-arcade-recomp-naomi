@@ -209,10 +209,31 @@ struct SelectExport {
             // Course panels are 152 apart from x 24 (144 wide), the ring reaches about 12 past them.
             const unsigned left = maps ? 152 * cursor : 248 * cursor, width = maps ? 188 : 248;
             const unsigned right = std::min(left + width, unsigned(rt::Video::W)), top = maps ? 56 : 40, bottom = maps ? 167 : 200;
-            // Dump the exact 3D display list around this select frame. Vertex x/y
-            // are the projected coordinates consumed by the rasterizer.
+            // Dump the exact 3D display list and the full frame-region colour distribution.
             {
                 std::ofstream diag(c.dir / "frame_polygons.txt");
+                const uint32_t ring_colour = v.system24_pen(0x10d3) | 0xff000000u;
+                std::map<uint32_t, unsigned> frame_colours;
+                unsigned drawn_count = 0, ring_count = 0;
+                for (unsigned y = top; y < bottom; ++y) for (unsigned x = left; x < right; ++x) {
+                    const size_t at = size_t(y) * rt::Video::W + x;
+                    if (drawn[at]) {
+                        ++drawn_count;
+                        ++frame_colours[screen.pixels[at] & 0xffffffu];
+                        if (screen.pixels[at] == ring_colour) ++ring_count;
+                    }
+                }
+                const size_t mismatch_at = 149 * rt::Video::W + 130;
+                diag << "# frame region " << left << ' ' << top << ' ' << right << ' ' << bottom
+                     << " ring=0x" << std::hex << ring_colour
+                     << " mismatch_screen=0x" << screen.pixels[mismatch_at]
+                     << " mismatch_composite=0x" << composite.pixels[mismatch_at]
+                     << std::dec << " mismatch_drawn=" << unsigned(drawn[mismatch_at])
+                     << " drawn_count=" << drawn_count << " ring_count=" << ring_count << '\\n';
+                diag << "# frame_colours";
+                for (const auto &[color, count] : frame_colours)
+                    diag << ' ' << std::hex << color << std::dec << ':' << count;
+                diag << '\\n';
                 const auto &polys = v.gpu_polys();
                 diag << "# index z window vertices luma headers center_x center_y crtc_x crtc_y minx miny maxx maxy colors x y pz pu pv ...\n";
                 diag << "# crtc " << v.crtc_x() << ' ' << v.crtc_y()
