@@ -12,3 +12,7 @@
 
 ## Cabinet type
 - [ ] Wire the saved CABINET setting into runtime cabinet behaviour, including the cabinet-specific colour translation tables. Verify DELUXE and UPLIGHT produce visibly different, correct output.
+
+## Select-screen presentation
+- [ ] Restore the rotating car models on the transmission / circuit selection screen. This is already missing in the inherited dreamcast-native build, so track it separately from Naomi-specific regressions.
+- [ ] Reproduce the selected-card animation: retain the steady card frame while animating the large red selection backing and the flashing inner blue/cyan card area. Use the original-game video reference (00:53–01:05) when implementing and validating the effect.
