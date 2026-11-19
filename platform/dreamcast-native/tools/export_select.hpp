@@ -217,10 +217,17 @@ struct SelectExport {
                 diag << "# index z window vertices luma header0 header1 header2 header3 x y pz pu pv ...\n";
                 for (size_t i = 0; i < polys.size(); ++i) {
                     const auto &p = polys[i];
-                    float minx = p.v[0].x, maxx = minx, miny = p.v[0].y, maxy = miny;
+                    auto project_x = [&](const rt::GeoVertex &vtx) {
+                        return float(v.crtc_x() + p.center[0]) + vtx.x / (vtx.p[0] + std::numeric_limits<float>::min());
+                    };
+                    auto project_y = [&](const rt::GeoVertex &vtx) {
+                        return float((384 - p.center[1]) + v.crtc_y()) - vtx.y / (vtx.p[0] + std::numeric_limits<float>::min());
+                    };
+                    float minx = project_x(p.v[0]), maxx = minx, miny = project_y(p.v[0]), maxy = miny;
                     for (unsigned k = 1; k < p.num_vertices; ++k) {
-                        minx = std::min(minx, p.v[k].x); maxx = std::max(maxx, p.v[k].x);
-                        miny = std::min(miny, p.v[k].y); maxy = std::max(maxy, p.v[k].y);
+                        const float x = project_x(p.v[k]), y = project_y(p.v[k]);
+                        minx = std::min(minx, x); maxx = std::max(maxx, x);
+                        miny = std::min(miny, y); maxy = std::max(maxy, y);
                     }
                     if (maxx < float(left) || minx >= float(right) || maxy < float(top) || miny >= float(bottom)) continue;
                     diag << i << ' ' << p.z << ' ' << unsigned(p.window) << ' ' << unsigned(p.num_vertices) << ' '
