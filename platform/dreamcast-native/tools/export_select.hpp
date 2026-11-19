@@ -209,10 +209,10 @@ struct SelectExport {
             // Course panels are 152 apart from x 24 (144 wide), the ring reaches about 12 past them.
             const unsigned left = maps ? 152 * cursor : 248 * cursor, width = maps ? 188 : 248;
             const unsigned right = std::min(left + width, unsigned(rt::Video::W)), top = maps ? 56 : 40, bottom = maps ? 167 : 200;
-            // The ring uses System24 palette pen 0x0d3. system24_pixel() returns a
-            // 12-bit pen index (palette bank * 16 + pixel), so 0x10d3 is not a valid
-            // System24 pixel pen and would read an untouched palette entry.
-            const uint32_t ring = v.system24_pen(0x0d3) | 0xff000000u;
+            // The ring is drawn by the 3D rasterizer from palette entry 0x10d3.
+            // This is a raster palette index, not a tilemap pixel pen; the latter
+            // is limited to 12 bits by System24's 8-bit colour bank and 4-bit pixel.
+            const uint32_t ring = v.system24_pen(0x10d3) | 0xff000000u;
             for (unsigned y = 0; y < rt::Video::H; ++y) for (unsigned x = 0; x < rt::Video::W; ++x)
                 if (screen.pixels[y * rt::Video::W + x] != ring) drawn[y * rt::Video::W + x] = 0;
             if (!box(left, right, top, bottom, r)) throw std::runtime_error("select frame not drawn");
