@@ -115,7 +115,8 @@ static inline void nm_a2d_time(nm_a2d_t *s, uint32_t time, uint32_t at) {
     else for(unsigned y=0;y<4;++y) for(unsigned x=0;x<3;++x) *nm_a2d_cell(s,cell+128u*y+2u*x)=0x8280u;
 }
 
-/* 5674: the footer. */
+/* 5674: the footer. coins_per_credit mirrors the original I/O EEPROM +0x10; the Naomi runtime supplies its
+ * configured one-coin ratio, while the ROM-reference lockstep test supplies the factory image's three-coin ratio. */
 static inline void nm_a2d_footer(nm_a2d_t *s) {
     (void)nm_a2d_block(s,0x2872a2au,0x10014d8u);
     (void)nm_a2d_block(s,0x2876a84u,0x100163cu);
