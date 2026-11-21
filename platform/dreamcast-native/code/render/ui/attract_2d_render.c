@@ -97,7 +97,7 @@ void nm_attract_2d_phase2(unsigned course, const nm_race_record_t *records_of_co
      * USA/EXPORT use the international set; JPN uses the Japanese set. */
     const nm_settings_t *settings=nm_game_settings();
     const unsigned country=settings ? settings->country : NM_COUNTRY_JPN;
-    nm_a2d_phase2(&layer, course, records_of_course, country, view);
+    nm_a2d_phase2(&layer, course, records_of_course, country, 1, view);
     shown = 1; stale = 1;
 }
 void nm_attract_2d_cinematic(unsigned phase, uint32_t counter, int last) {
