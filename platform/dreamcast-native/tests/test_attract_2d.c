@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
     unsigned course = 0, view = 0;
     for (long loop = 0; loop < loops; ++loop) {
         ++counter; /* phase 2 */
-        nm_a2d_phase2(&s, course, records[course < 3 ? course : 0], 1, view);
+        nm_a2d_phase2(&s, course, records[course < 3 ? course : 0], 1, 3, view);
         compare(&s, counter, "phase 2");
         const uint32_t object_clock = counter + 1u;
         nm_a2d_cinematic(&s, 3, object_clock, 0); /* the scene start: phase 3's first iteration */
