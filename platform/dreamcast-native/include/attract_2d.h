@@ -31,7 +31,7 @@ typedef struct {
     uint8_t ranking, demo;                        /* the objects' states: 0 off, then their next routine */
     uint16_t ranking_counter, demo_counter;       /* 2266f8's +6 (the next line revealed), 224e64's +6 */
     uint8_t view;                                 /* 501710 as the demo object writes it */
-    uint8_t credits, coin_mode;
+    uint8_t credits, coin_mode, coins_per_credit;
     uint8_t country;                              /* 53e59a & 1 */
     const nm_race_record_t *records;              /* 50138c: the course's records (the first five drawn) */
     uint8_t course;                               /* 501460 */
@@ -129,7 +129,7 @@ static inline void nm_a2d_footer(nm_a2d_t *s) {
     nm_a2d_string(s,s->credits<2u ? nm_a2d_text_credit : nm_a2d_text_credits,0x1001608u);
     nm_a2d_number(s,s->credits,0x1001628u,2);
     nm_a2d_char(s,62u,0x1001630u);
-    nm_a2d_number(s,1u,0x1001634u,1);
+    nm_a2d_number(s,s->coins_per_credit,0x1001634u,1);
 }
 /* 5588: the footer, then the line: blank while 5010b0 & 8 is clear, else INSERT COIN(S) without a credit. */
 static inline void nm_a2d_insert_coin(nm_a2d_t *s, uint32_t counter) {
@@ -198,9 +198,11 @@ static inline void nm_a2d_demo_tick(nm_a2d_t *s) {
  *   phase 7 (2028): 5588, then the demo object.
  * COUNTER: 5010b0 of the iteration. */
 static inline void nm_a2d_phase2(nm_a2d_t *s, unsigned course, const nm_race_record_t *records, unsigned country,
-        unsigned view) {
+        unsigned coins_per_credit, unsigned view) {
     nm_memset(s,0,sizeof(*s));
-    s->course=(uint8_t)course;s->records=records;s->country=(uint8_t)(country&1u);s->view=(uint8_t)(view&3u);
+    s->course=(uint8_t)course;s->records=records;s->country=(uint8_t)(country&1u);
+    s->coins_per_credit=(uint8_t)(coins_per_credit<1u ? 1u : coins_per_credit>9u ? 9u : coins_per_credit);
+    s->view=(uint8_t)(view&3u);
     nm_a2d_fill(s,0x8020u);
     nm_a2d_footer(s);
     (void)nm_a2d_block(s,0x287659cu,0x10000dcu);
