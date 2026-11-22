@@ -392,7 +392,7 @@ static int practice_reset_session(const nm_player_t *previous) {
     practice.race_commands=0;
     practice.race_command_hash=UINT32_C(2166136261);
     nm_race_sound_hook_reset(0);
-    nm_race_sound_hook_course(practice.road.awards); /* the announcer's prefetch: the lap awards */
+    nm_race_sound_hook_course(practice.road.awards,practice.course); /* lap awards and this course's announcement tables */
     practice.start_pending=0;practice.start_edges=0;practice.shift_pending=0;
     nm_props_start_edges(&practice.start_edges); /* the START edges Expert's actors see (props_scene.c) */
     for(unsigned i=0;i<practice.race.count;++i) {
