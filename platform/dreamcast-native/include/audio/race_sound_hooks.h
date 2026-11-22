@@ -12,8 +12,8 @@
 #include <stdint.h>
 #include "race_scene.h"
 
-/* The course's lap awards (the road pack's), for the announcer's prefetch hints (once per race session). */
-void nm_race_sound_hook_course(const nm_road_awards_t *awards);
+/* The course's lap awards and announcement-table slot, for streamed-voice prefetch hints. */
+void nm_race_sound_hook_course(const nm_road_awards_t *awards,unsigned course);
 /* Counters to zero for a new session; boot: also 18f30's last values (once per power-on). */
 void nm_race_sound_hook_reset(int boot);
 /* Before the tick: ab78's start voice (it reads the stage and the profile before the tick). */
