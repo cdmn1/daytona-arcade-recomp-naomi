@@ -56,16 +56,22 @@ uint32_t nm_race_sound_hook_before(const nm_race_scene_t *race,unsigned profile_
         (int)profile_count-1-race->cars[0].car.phase[0],profile_count-1);
 }
 
-/* The streamed phrases' prefetch (race_sound.h nm_race_sound_hints, course 0's tables). */
-static const nm_road_awards_t *course_awards; /* nm_race_sound_hook_course */
-void nm_race_sound_hook_course(const nm_road_awards_t *awards) { course_awards=awards; }
+/* Streamed-voice prefetch must follow the same course tables as race events (race_intent_data.h). */
+static const nm_road_awards_t *course_awards;
+static unsigned course_slot;
+static int course_slot_valid;
+void nm_race_sound_hook_course(const nm_road_awards_t *awards,unsigned course) {
+    course_awards=awards;course_slot=course;course_slot_valid=course<4u;
+}
 
 static void hints(const nm_race_scene_t *race) {
+    if(!course_slot_valid) return;
     uint32_t keys[8];
     const unsigned n=nm_race_sound_hints(course_awards,race->award.counter,
-        nm_race_announcement_rows+nm_race_announcement_offsets[0],
-        nm_race_announcement_counts[0],nm_race_announcement_ranks,nm_race_intent_rows,nm_race_intent_alternate[0],
-        race->announcement_cursor,race->cars[0].rank,race->award.remaining,race->shared.clock,keys);
+        nm_race_announcement_rows+nm_race_announcement_offsets[course_slot],
+        nm_race_announcement_counts[course_slot],nm_race_announcement_ranks,nm_race_intent_rows,
+        nm_race_intent_alternate[course_slot],race->announcement_cursor,race->cars[0].rank,
+        race->award.remaining,race->shared.clock,keys);
     (void)nm_race_intent_special;
     nm_sfx_hint(keys,n);
 }
