@@ -426,6 +426,7 @@ jobs:
           make -C platform/dreamcast-native \
             "${MAKE_VARS[@]}" \
             NATIVE_RESIDENT_CAR=1 NATIVE_FRAME_PROFILE=1 NATIVE_HANDOPT=1 \
+            NATIVE_SFX_VOICE_STREAM=1 \
             RACE_TICK_LIMIT=0 \
             NAOMI_VERSION="$NAOMI_VERSION" \
             NAOMI_TITLE="$NAOMI_TITLE" \
