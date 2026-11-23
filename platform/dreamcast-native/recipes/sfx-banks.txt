@@ -11,8 +11,8 @@
 #   ae2109-c   the start voices THREE, TWO, ONE, GO
 #   ae2010     the crowd at every lap (9e11's sample: no bytes of its own), ae2002/ae2003 the slot machine
 #
-# voices: the announcer's phrases a race can play beyond the countdown (race_intent_data.h's rows and specials, the
-# lap call ae2101, the record ae2124, the finish calls ae2136..ae2138, ae2100): 58, 588 KB of ADPCM samples. They do
+# voices: announcer phrases used beyond the countdown, including the race calls and the course/transmission selection
+# prompts from include/select.h: 58 ROM-rendered ADPCM phrases. They do
 # not fit beside the PCM8 race music: build_sfx.sh --voices stream (default) writes sfx/voices.pak for the streamed
 # slot (NATIVE_SFX_VOICE_STREAM=1); --voices resident adds them to the race bank (beside the race music in ADPCM).
 race pcm8 e0-e9
