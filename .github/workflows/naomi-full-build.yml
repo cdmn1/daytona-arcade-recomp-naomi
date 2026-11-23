@@ -6,6 +6,8 @@ on:
     branches: [naomi]
     paths:
       - ".github/workflows/naomi-full-build.yml"
+      - "VERSION"
+      - "platform/dreamcast-native/recipes/sfx-banks.txt"
       - "platform/naomi/**"
       - "platform/dreamcast-native/Makefile"
       - "platform/dreamcast-native/recipes/build_assets.sh"
