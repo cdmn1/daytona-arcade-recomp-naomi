@@ -415,7 +415,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: build/naomi-assets
-          key: naomi-assets-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!**/__pycache__/**', '!**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
+          key: naomi-assets-v2-${{ runner.os }}-${{ hashFiles('platform/dreamcast-native/**', '!platform/dreamcast-native/code/render/**', '!platform/dreamcast-native/include/render/**', '!**/__pycache__/**', '!**/*.pyc', 'scripts/**') }}-${{ hashFiles('input/daytona93-complete.zip', 'input/daytona-music.zip') }}
 
       - name: Compile Naomi game and append resident ROMFS
         env:
