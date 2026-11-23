@@ -1,5 +1,19 @@
 # TODO
 
+## Course / transmission selection
+- [ ] Identify and restore the missing confirmation SFX that plays simultaneously with the course-selected and transmission-selected voice lines. Trace the original ROM's course confirmation (23b504) and transmission confirmation (23b514 / 23b53c) sound-command sequences; preserve simultaneous playback rather than delaying or replacing the voice.
+- [ ] Restore any other missing course/transmission selection sounds after the confirmation SFX is matched against the original.
+- [ ] Restore the rotating stop/start sign and its corresponding SFX at the start of the Intermediate and Advanced tracks. Missing since the first native build; likely inherited from the dreamcast-native port.
+
+## Audio / timing
+- [ ] Fix the Game Over music start timing: it currently begins about 1–2 seconds late relative to the letters appearing. Compare the original game's Game Over sequence and inherited dreamcast-native timing.
+- [ ] Add the missing time-expired finishing-position voice (for example, "You placed 20th") and verify the correct position-specific line is selected.
+- [ ] Check the Game Over/results presentation: the position and time text should overlay the live game scene as in the original, not appear over a black screen.
+
+## Region-dependent presentation and audio
+- [ ] When COUNTRY is set to EXPORT/USA (English), show the English REVERSE sign instead of the Japanese kanji sign while reversing.
+- [ ] In EXPORT/USA mode, replace/suppress the Japanese reverse-time bonus/easter-egg voice with the correct English-region behaviour. Verify the intended regional variant against the original ROM.
+
 ## Audio
 - [ ] Investigate incomplete in-game voice playback inherited from the dreamcast-native port. The Naomi Game Test VOICE sound test works, but only some in-game voice lines currently play.
 
