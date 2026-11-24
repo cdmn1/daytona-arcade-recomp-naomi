@@ -421,11 +421,14 @@ The attract loop over the three courses (18 October):
                                                        the cells, the scene light or the view beyond 0.25 units but
                                                        what the V.R. demo before leaves: not native, listed apart)
 
-Games one after another (30 October; the step games_lockstep, no output):
-  M N inputs/games-X.txt --trace-frontend --trace-race --trace-attract -> frontend-X.trace, race-X.trace (deleted after use)
+Games one after another (30 October; the step games_lockstep):
+  M N inputs/games-X.txt --trace-frontend --trace-race --trace-sound --trace-attract
+                                                       -> frontend-X.trace, race-X.trace, sound-X.trace
   tests/test_games_lockstep.py: for each game of a run, from power-on, trace_attract_native (--enter, --credit, --leave),
   trace_race_native (--enter, --frontend, --leave), compare_race_trace --require-equal, every field of every car and
   test_attract_lockstep.py                             (fails on any difference; tests/game_chain.h)
+  sound-X.trace is retained at OUTDIR/diagnostics/games-sound/sound-X.trace (A..J): original UART sound commands,
+  including the course/transmission selection screens, for identifying missing confirmation effects.
 ```
 
 ## Where the historical intermediates differ
