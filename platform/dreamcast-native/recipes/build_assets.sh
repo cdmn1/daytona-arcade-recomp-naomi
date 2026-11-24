@@ -835,7 +835,7 @@ attract_2d() {
   rm -rf $d
 }
 step attract_2d attract_2d
-DESC_games_lockstep="games lockstep: the original's runs of two games and of games from the demo and the title (inputs/games-A..J), each game through trace_attract_native and trace_race_native chained, every car on every row, tracking words included"
+DESC_games_lockstep="games lockstep: the original's runs of two games and of games from the demo and the title (inputs/games-A..J), each game through trace_attract_native and trace_race_native chained, every car on every row, tracking words included; retain original UART sound-command traces"
 games_lockstep() {
   local d=$W/games x n i=0
   fresh $d; mkdir -p $d/assets $d/traces
@@ -850,13 +850,22 @@ games_lockstep() {
   for x in A B C D E F G H I J; do
     n=$(awk '$1=="frames" { print $2; exit }' $RC/inputs/games-$x.txt)
     $M $R $n --inputs $RC/inputs/games-$x.txt --trace-frontend $d/traces/frontend-$x.trace --trace-race $d/traces/race-$x.trace \
-       --trace-attract > $d/traces/$x.log 2>&1 &
+       --trace-sound $d/traces/sound-$x.trace --trace-attract > $d/traces/$x.log 2>&1 &
     (( (++i)%JOBS )) || wait
   done
   wait
   for x in A B C D E F G H I J; do [[ -s $d/traces/race-$x.trace ]] || { print -r -- "no reference of games-$x"; return 1; }; done
   python3 -I $DN/tests/test_games_lockstep.py $d/trace_race_native $d/trace_attract_native $d/assets $d/traces > $d/compare.txt || { tail -20 $d/compare.txt; return 1; }
   tail -19 $d/compare.txt
+  # Preserve the original ROM's UART command stream separately from the large lockstep traces.
+  # These are the exact sound commands emitted during each scripted title/selection/race run.
+  local sound_out=$OUT/diagnostics/games-sound
+  mkdir -p $sound_out
+  for x in A B C D E F G H I J; do
+    [[ -f $d/traces/sound-$x.trace ]] || { print -r -- "no sound trace of games-$x"; return 1; }
+    cp $d/traces/sound-$x.trace $sound_out/
+  done
+  print -r -- "retained original sound traces: $sound_out/sound-{A..J}.trace"
   fresh $d/traces
 }
 step games_lockstep games_lockstep
