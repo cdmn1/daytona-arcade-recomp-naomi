@@ -410,6 +410,15 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+      - name: Upload original selection sound traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daytona-selection-sound-traces
+          path: build/naomi-assets/diagnostics/games-sound/sound-*.trace
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Save generated Daytona asset cache
         if: steps.asset-cache.outputs.cache-hit != 'true' && success()
         uses: actions/cache/save@v4
