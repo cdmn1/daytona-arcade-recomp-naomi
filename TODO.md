@@ -6,6 +6,7 @@
 - [ ] Restore the rotating stop/start sign and its corresponding SFX at the start of the Intermediate and Advanced tracks. Missing since the first native build; likely inherited from the dreamcast-native port.
 
 ## Audio / timing
+- [ ] After the course/transmission confirmation SFX is fixed, replace the single-active-phrase voice streamer with concurrent voice playback. Preserve original sound-command timing and allow overlapping voice clips; use independent playback instances/resources with safe AICA RAM limits. Compare against original sound traces to verify which events overlap.
 - [ ] Fix the Game Over music start timing: it currently begins about 1–2 seconds late relative to the letters appearing. Compare the original game's Game Over sequence and inherited dreamcast-native timing.
 - [ ] Add the missing time-expired finishing-position voice (for example, "You placed 20th") and verify the correct position-specific line is selected.
 - [ ] Check the Game Over/results presentation: the position and time text should overlay the live game scene as in the original, not appear over a black screen.
