@@ -146,6 +146,7 @@ for bank in $banks; do
 import csv, struct, sys
 from pathlib import Path
 render_path, dsx_path, afb_path, out_path = map(Path, sys.argv[1:])
+bank = out_path.name.removeprefix('flows-').removesuffix('.tsv')
 align = lambda n: (n + 31) & ~31
 render = {}
 with render_path.open(newline='') as f:
