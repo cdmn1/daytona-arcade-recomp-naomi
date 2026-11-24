@@ -140,6 +140,40 @@ for bank in $banks; do
   done
   $BANK --merge $OUT/sfx/$bank.afb $W/merged/$bank $W/raw/$bank/*.afx >> $OUT/logs/sfx-convert.log
   $P pack $W/render/render.tsv $W/render/engine.tbl $W/render/gains.bin $W/merged/$bank $OUT/sfx/$bank.dsx
+  # Per-flow diagnostic: exact AFX upload allocation plus the source sample footprint before merging.
+  # The latter is deliberately labelled as pre-merge; shared/merged AFB allocation is reported only at bank level.
+  python3 -I - $W/render/render.tsv $OUT/sfx/$bank.dsx $OUT/sfx/$bank.afb $OUT/sfx/flows-$bank.tsv <<'PY'
+import csv, struct, sys
+from pathlib import Path
+render_path, dsx_path, afb_path, out_path = map(Path, sys.argv[1:])
+align = lambda n: (n + 31) & ~31
+render = {}
+with render_path.open(newline='') as f:
+    for row in csv.DictReader(f, delimiter='\\t'):
+        render[int(row['command'], 16)] = row
+
+ds = dsx_path.read_bytes()
+if ds[:4] != b'DSX1':
+    raise SystemExit(f'{dsx_path}: invalid DSX1')
+count, directory = struct.unpack_from('<II', ds, 8)
+rows = []
+for i in range(count):
+    at = directory + 16 * i
+    key, kind, track = struct.unpack_from('<IBB', ds, at)
+    offset, size = struct.unpack_from('<II', ds, at + 8)
+    if offset + size > len(ds) or size < 24:
+        raise SystemExit(f'{dsx_path}: invalid flow {key:06x}')
+    afx = ds[offset:offset + size]
+    image_size = struct.unpack_from('<I', afx, 20)[0]
+    row = render.get(key, {})
+    rows.append((key, kind, track, int(row.get('sample_bytes', 0)), align(image_size), size))
+with out_path.open('w', newline='') as f:
+    w = csv.writer(f, delimiter='\\t', lineterminator='\\n')
+    w.writerow(['command', 'kind', 'track', 'rendered_sample_bytes_pre_merge', 'flow_aica_upload_bytes_aligned', 'afx_file_bytes'])
+    for key, kind, track, samples, upload, size in rows:
+        w.writerow([f'{key:06x}', kind, track, samples, upload, size])
+print(f'   {bank}: per-flow diagnostics: {len(rows)} flows -> {out_path.name} (sample bytes are pre-merge; AICA upload is exact)')
+PY
   aica=$(python3 -I - $OUT/sfx/$bank.afb $OUT/sfx/$bank.dsx <<'EOF'
 import struct, sys
 align = lambda n: (n + 31) & ~31
