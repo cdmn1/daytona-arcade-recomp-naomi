@@ -391,6 +391,40 @@ jobs:
             input/daytona93-complete.zip build/naomi-assets \
             --music input/daytona-music.zip --jobs 2
 
+      # On an asset-cache hit the main asset-generation step is skipped. Rebuild
+      # only the ROM-derived SFX bank so its per-flow AICA report is still available.
+      - name: Generate SFX AICA diagnostics (asset-cache hit)
+        if: steps.asset-cache.outputs.cache-hit == 'true'
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          set -euo pipefail
+          mkdir -p build/naomi-assets/work/sfx-out
+          if zsh platform/dreamcast-native/recipes/build_sfx.sh \\
+            input/daytona93-complete.zip build/naomi-assets/work/sfx-out \\
+            --music build/naomi-assets/work/music/music; then
+            echo "SFX bank generation completed."
+          else
+            status=$?
+            echo "SFX bank generation exited with status $status; preserving diagnostics produced before the AICA budget check."
+          fi
+          test -s build/naomi-assets/work/sfx-out/sfx/flows-race.tsv
+          test -s build/naomi-assets/work/sfx-out/sfx/banks.tsv
+
+      - name: Upload SFX AICA diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daytona-sfx-aica-diagnostics
+          path: |
+            build/naomi-assets/work/sfx-out/sfx/flows-race.tsv
+            build/naomi-assets/work/sfx-out/sfx/flows-voices.tsv
+            build/naomi-assets/work/sfx-out/sfx/banks.tsv
+            build/naomi-assets/work/sfx-out/sfx/render.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Upload select polygon diagnostic
         if: always()
         uses: actions/upload-artifact@v4
