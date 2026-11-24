@@ -1,5 +1,9 @@
 # TODO
 
+## Audio bank residency
+- [ ] Replace the permanently resident `sfx/race.afb` bank with phase-specific attract/credit, course/transmission selection, race, and results banks. Keep the complete audio library in the NetDIMM image/main-RAM cache and upload only the active phase's working set to AICA. Preload the next phase in main RAM and switch banks at safe transitions; preserve effects/voices that intentionally overlap a transition. Add per-phase and transition-overlap AICA budget checks. See [NAOMI audio bank residency plan](docs/naomi-audio-bank-design.md).
+- [ ] Inventory sound-command membership by phase from ROM call sites and traces before moving flows; do not remove effects based only on short captures. Keep `AE2158` in selection, `9E27` and confirmed crash effects in race.
+
 ## Course / transmission selection
 - [ ] Identify and restore the missing confirmation SFX that plays simultaneously with the course-selected and transmission-selected voice lines. Trace the original ROM's course confirmation (23b504) and transmission confirmation (23b514 / 23b53c) sound-command sequences; preserve simultaneous playback rather than delaying or replacing the voice.
 - [ ] Restore any other missing course/transmission selection sounds after the confirmation SFX is matched against the original.
