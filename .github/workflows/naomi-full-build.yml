@@ -11,6 +11,7 @@ on:
       - "platform/naomi/**"
       - "platform/dreamcast-native/Makefile"
       - "platform/dreamcast-native/recipes/build_assets.sh"
+      - "platform/dreamcast-native/recipes/build_sfx.sh"
       - "platform/dreamcast-native/tools/export_select.hpp"
       - "platform/dreamcast-native/tools/prepare_select.py"
       - "platform/dreamcast-native/tests/test_select_render.py"
