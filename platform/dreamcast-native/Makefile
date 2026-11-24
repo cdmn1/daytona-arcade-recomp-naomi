@@ -185,6 +185,7 @@ endif
 	python3 tests/test_track_surface.py
 	python3 tests/test_practice_assets_reload.py
 	python3 tests/test_drop_log.py
+	python3 tools/check_sfx_phase_inventory.py
 	cc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -DNM_RACE_CONTROLS_CHECK tests/race_controls_wrap.c -o $(ENJ_BUILDDIR)/race-input-check
 	$(ENJ_BUILDDIR)/race-input-check
 	cc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -Iinclude tests/test_podium.c -o $(ENJ_BUILDDIR)/podium-check
