@@ -423,6 +423,7 @@ jobs:
             build/naomi-assets/work/sfx-out/sfx/flows-voices.tsv
             build/naomi-assets/work/sfx-out/sfx/banks.tsv
             build/naomi-assets/work/sfx-out/sfx/render.tsv
+            build/naomi-assets/work/sfx-out/sfx/candidate-removal.tsv
           if-no-files-found: warn
           retention-days: 7
 
