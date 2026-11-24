@@ -233,7 +233,7 @@ for candidate in raw:
                      ((sample_bytes + 31) & ~31)))
 rows.sort(key=lambda row: (-row[1], row[0]))
 with out.open('w', newline='') as f:
-    writer = csv.writer(f, delimiter='\\t', lineterminator='\\n')
+    writer = csv.writer(f, delimiter='\t', lineterminator='\n')
     writer.writerow(['removed_command', 'aica_bytes_saved_exact', 'new_race_bank_aica_bytes',
                      'left_beside_race_music', 'merged_sample_allocation_bytes'])
     for key, saving, total, left, samples in rows:
