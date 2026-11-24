@@ -149,7 +149,7 @@ render_path, dsx_path, afb_path, out_path = map(Path, sys.argv[1:])
 align = lambda n: (n + 31) & ~31
 render = {}
 with render_path.open(newline='') as f:
-    for row in csv.DictReader(f, delimiter='\\t'):
+    for row in csv.DictReader(f, delimiter='\t'):
         render[int(row['command'], 16)] = row
 
 ds = dsx_path.read_bytes()
@@ -168,7 +168,7 @@ for i in range(count):
     row = render.get(key, {})
     rows.append((key, kind, track, int(row.get('sample_bytes', 0)), align(image_size), size))
 with out_path.open('w', newline='') as f:
-    w = csv.writer(f, delimiter='\\t', lineterminator='\\n')
+    w = csv.writer(f, delimiter='\t', lineterminator='\n')
     w.writerow(['command', 'kind', 'track', 'rendered_sample_bytes_pre_merge', 'flow_aica_upload_bytes_aligned', 'afx_file_bytes'])
     for key, kind, track, samples, upload, size in rows:
         w.writerow([f'{key:06x}', kind, track, samples, upload, size])
