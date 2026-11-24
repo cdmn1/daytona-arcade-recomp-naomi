@@ -126,6 +126,9 @@ jobs:
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
           kos-cc -I"$GITHUB_WORKSPACE/extern/endjinn/include" \
+            -I"$KOS_BASE/kernel/arch/dreamcast/include" \
+            -I"$KOS_BASE/include" \
+            -I"$KOS_BASE/addons/include" \
             -D_arch_sub_naomi \
             -DENJ_KOS_INIT_FLAGS='(INIT_DEFAULT | INIT_MIE)' \
             -fsyntax-only "$GITHUB_WORKSPACE/extern/endjinn/code/enj_ctrl.c" \
