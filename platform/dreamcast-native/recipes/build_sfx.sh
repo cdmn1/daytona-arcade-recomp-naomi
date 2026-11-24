@@ -189,6 +189,58 @@ print(total)
 EOF
   )
   left=$(( ARENA - race_music - aica ))
+  if [[ $bank == race ]]; then
+    # Re-merge the bank once per flow with that flow omitted. This measures
+    # actual post-deduplication AFB savings, not the misleading pre-merge
+    # rendered sample byte count in flows-race.tsv.
+    python3 -I - $BANK $W/raw/race $OUT/sfx/race.dsx $aica $ARENA $race_music $OUT/sfx/candidate-removal.tsv <<'PY'
+import csv, struct, subprocess, sys, tempfile
+from pathlib import Path
+bank_tool, raw_dir, dsx_path = sys.argv[1:4]
+baseline, arena, music = map(int, sys.argv[4:7])
+out = Path(sys.argv[7])
+dsx = Path(dsx_path).read_bytes()
+if dsx[:4] != b'DSX1':
+    raise SystemExit("invalid race DSX")
+count, directory = struct.unpack_from('<II', dsx, 8)
+flows = {}
+for i in range(count):
+    at = directory + 16 * i
+    key, = struct.unpack_from('<I', dsx, at)
+    offset, size = struct.unpack_from('<II', dsx, at + 8)
+    image_size, = struct.unpack_from('<I', dsx, offset + 20)
+    flows[key] = ((image_size + 31) & ~31)
+raw = sorted(Path(raw_dir).glob('*.afx'))
+if len(raw) != len(flows):
+    raise SystemExit(f"race flow mismatch: {len(raw)} AFX files, {len(flows)} DSX entries")
+rows = []
+for candidate in raw:
+    key = int(candidate.stem, 16)
+    with tempfile.TemporaryDirectory(prefix='daytona-sfx-merge-') as td:
+        root = Path(td)
+        merged_dir = root / 'flows'
+        merged_dir.mkdir()
+        afb = root / 'candidate.afb'
+        inputs = [str(p) for p in raw if p != candidate]
+        subprocess.run([bank_tool, '--merge', str(afb), str(merged_dir), *inputs],
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        image = afb.read_bytes()
+        sample_bytes, = struct.unpack_from('<I', image, 20)
+        candidate_total = ((sample_bytes + 31) & ~31) + sum(
+            size for other, size in flows.items() if other != key)
+        saving = baseline - candidate_total
+        rows.append((key, saving, candidate_total, arena - music - candidate_total,
+                     ((sample_bytes + 31) & ~31)))
+rows.sort(key=lambda row: (-row[1], row[0]))
+with out.open('w', newline='') as f:
+    writer = csv.writer(f, delimiter='\\t', lineterminator='\\n')
+    writer.writerow(['removed_command', 'aica_bytes_saved_exact', 'new_race_bank_aica_bytes',
+                     'left_beside_race_music', 'merged_sample_allocation_bytes'])
+    for key, saving, total, left, samples in rows:
+        writer.writerow([f'{key:06x}', saving, total, left, samples])
+print(f"   exact removal analysis: {len(rows)} single-flow re-merges -> {out.name}")
+PY
+  fi
   print -r -- "$bank"$'\t'"$n"$'\t'"$(( $(zstat +size $OUT/sfx/$bank.afb) - 32 ))"$'\t'"$aica"$'\t'"$left" >> $OUT/sfx/banks.tsv
   print -r -- "   $bank: $n flows, $aica bytes of AICA RAM; $left left beside the race music ($race_music)"
   if [[ $bank == race ]] && (( left < 4096 )); then
