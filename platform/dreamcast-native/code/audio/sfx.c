@@ -54,8 +54,10 @@ static uint16_t le16(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }
 static void free_flows(void) {
     for (unsigned i = 0; i < sfx.count; ++i)
         if (sfx.entries[i].flow) {
-            const int result = afx_asset_free(sfx.entries[i].flow);
-            if (result) printf("Sound effects: freeing flow %06lx failed (%d)\n", (unsigned long)sfx.entries[i].key, result);
+            /* AICAflow defers this release until the last instance ends. This is required
+             * for phase changes: an outgoing one-shot may outlive the phase that started it. */
+            const int result = afx_asset_release(sfx.entries[i].flow);
+            if (result) printf("Sound effects: releasing flow %06lx failed (%d)\n", (unsigned long)sfx.entries[i].key, result);
             sfx.entries[i].flow = AFX_ASSET_INVALID;
         }
     free(sfx.entries); sfx.entries = NULL; sfx.count = 0;
