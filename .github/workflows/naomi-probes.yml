@@ -129,7 +129,9 @@ jobs:
             -I"$KOS_BASE/kernel/arch/dreamcast/include" \
             -I"$KOS_BASE/include" \
             -I"$KOS_BASE/addons/include" \
+            -I"$KOS_BASE/utils" \
             -D_arch_sub_naomi \
+            -DENJ_CBASEPATH='"/naomi/"' \
             -DENJ_KOS_INIT_FLAGS='(INIT_DEFAULT | INIT_MIE)' \
             -fsyntax-only "$GITHUB_WORKSPACE/extern/endjinn/code/enj_ctrl.c" \
             "$GITHUB_WORKSPACE/extern/endjinn/code/enj_state.c"
