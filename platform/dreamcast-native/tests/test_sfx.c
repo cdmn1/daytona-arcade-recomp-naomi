@@ -19,7 +19,7 @@
 #define FAKE_FLOWS 512u
 static struct {
     uint32_t bank_low, bank_high; int banks_live;
-    struct { int live; int controlled; int released; } flow[FAKE_FLOWS + 1];
+    struct { int live; int controlled; } flow[FAKE_FLOWS + 1];
     unsigned flows_live, next_flow;
     struct { int live, stopping, controlled, running; unsigned age; afx_asset_t flow; uint32_t mask; uint16_t values[AFX_FIELD_COUNT]; } inst[FAKE_INSTANCES];
     uint16_t generation;
@@ -80,23 +80,6 @@ int afx_asset_free(afx_asset_t asset) {
     for (unsigned k = 0; k < FAKE_INSTANCES; ++k) if (fake.inst[k].live && fake.inst[k].flow == asset) return -AFX_BUSY;
     fake.flow[i].live = 0; --fake.flows_live; return 0;
 }
-/* Model AICAflow's deferred release: the handle is relinquished now, but its flow
- * remains allocated until the last instance that references it has been recycled. */
-static void collect_released_flows(void) {
-    for (unsigned i = 1; i <= fake.next_flow; ++i) if (fake.flow[i].live && fake.flow[i].released) {
-        int active = 0;
-        const afx_asset_t asset = i + 100u;
-        for (unsigned k = 0; k < FAKE_INSTANCES; ++k) active |= fake.inst[k].live && fake.inst[k].flow == asset;
-        if (!active) { fake.flow[i].live = 0; --fake.flows_live; }
-    }
-}
-int afx_asset_release(afx_asset_t asset) {
-    const int i = flow_index(asset);
-    if (i < 0 || !fake.flow[i].live) return -AFX_INVALID_HANDLE;
-    fake.flow[i].released = 1;
-    collect_released_flows();
-    return 0;
-}
 static int resolve(afx_instance_t i) {
     const unsigned k = (i & 0xffffu) - 1u;
     return k < FAKE_INSTANCES && fake.inst[k].live && (i >> 16) == fake.generation ? (int)k : -1;
@@ -138,7 +121,6 @@ static void frame(void) {
     for (unsigned k = 0; k < FAKE_INSTANCES; ++k)
         if (fake.inst[k].live && (fake.inst[k].stopping || (!fake.inst[k].controlled && ++fake.inst[k].age > fake_age)))
             fake.inst[k].live = 0;
-    collect_released_flows();
 }
 static void wait_ms(unsigned ms) { (void)ms; frame(); }
 static unsigned live(int controlled) {
@@ -318,10 +300,11 @@ int main(int argc, char **argv) {
         expect(!afx_bank_flow_upload(&sfx.bank, flow_image, sizeof(flow_image), &flow) &&
                !afx_instance_activate(flow, &instance), "temporary transition flow starts");
         const unsigned before = fake.flows_live;
-        expect(!afx_asset_release(flow) && fake.flows_live == before,
-               "deferred release keeps the outgoing flow alive while its instance plays");
+        expect(afx_asset_free(flow) != 0 && fake.flows_live == before,
+               "AICAflow refuses to free a flow while its instance is playing");
         for (unsigned i = 0; i < fake_age + 1; ++i) frame();
-        expect(fake.flows_live + 1 == before, "deferred release frees the flow after its final instance ends");
+        expect(!afx_asset_free(flow) && fake.flows_live + 1 == before,
+               "the outgoing flow can be freed after its final instance ends");
     }
 
     /* Engine on: rpm 1 keys layers 0..7 on; once their flows have parked (a patch before would land before the
