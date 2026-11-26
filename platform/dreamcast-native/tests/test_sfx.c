@@ -249,8 +249,8 @@ static void replay(const char *path) {
     nm_sfx_stats_t before = sfx.stats;
     unsigned fake_before = fake.patches;
     for (;;) {
-        long at = -1; unsigned long cmd = 0;
-        const int got = fgets(line, sizeof(line), f) && sscanf(line, "frame=%ld tick=%*ld cmd=%lx", &at, &cmd) == 2;
+        long at = -1, tick = 0; unsigned long cmd = 0;
+        const int got = fgets(line, sizeof(line), f) && sscanf(line, "frame=%ld tick=%ld cmd=%lx", &at, &tick, &cmd) == 3;
         if (!got || at != frame_now) {
             if (frame_now >= 0) {
                 /* Every frame from the previous command's to this one: the updater runs each frame. */
