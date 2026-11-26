@@ -12,6 +12,9 @@ on:
       - "platform/dreamcast-native/Makefile"
       - "platform/dreamcast-native/recipes/build_assets.sh"
       - "platform/dreamcast-native/recipes/build_sfx.sh"
+      - "platform/dreamcast-native/code/audio/sfx.c"
+      - "platform/dreamcast-native/include/audio/sfx.h"
+      - "platform/dreamcast-native/tests/test_sfx.c"
       - "platform/dreamcast-native/tools/export_select.hpp"
       - "platform/dreamcast-native/tools/prepare_select.py"
       - "platform/dreamcast-native/tests/test_select_render.py"
@@ -252,6 +255,25 @@ jobs:
           set -euo pipefail
           sh platform/dreamcast-native/scripts/fetch_endjinn.sh
           sh platform/dreamcast-native/scripts/fetch_aicaflow.sh
+
+      - name: Test NAOMI SFX lifecycle against pinned AICAflow ABI
+        run: |
+          set -euo pipefail
+          cc -std=gnu11 -O1 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all \
+            -Iplatform/dreamcast-native/include \
+            -Iextern/aicaflow/driver/include \
+            -Iextern/aicaflow/driver/format/include \
+            -Iextern/aicaflow/driver/sh4/include \
+            platform/dreamcast-native/tests/test_sfx.c -o /tmp/naomi-sfx-check
+          /tmp/naomi-sfx-check
+          cc -std=gnu11 -O1 -Wall -Wextra -Werror -DNM_SFX_VOICE_STREAM=1 \
+            -fsanitize=address,undefined -fno-sanitize-recover=all \
+            -Iplatform/dreamcast-native/include \
+            -Iextern/aicaflow/driver/include \
+            -Iextern/aicaflow/driver/format/include \
+            -Iextern/aicaflow/driver/sh4/include \
+            platform/dreamcast-native/tests/test_sfx.c -o /tmp/naomi-sfx-voices-check
+          /tmp/naomi-sfx-voices-check
 
       - name: Build pinned SH4ZAM library
         env:
