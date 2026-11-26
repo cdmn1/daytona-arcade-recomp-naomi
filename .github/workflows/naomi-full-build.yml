@@ -235,13 +235,13 @@ jobs:
           export KOS_SUBARCH=naomi
           . "$KOS_BASE/environ.sh"
           git clone --depth 1 https://github.com/KallistiOS/kos-ports.git "$KOS_PORTS"
-          # kos-ports currently points at the HTTP root, which returns an error
-          # page for this release. Pre-fetch the official HTTPS fossils archive;
-          # the port's distinfo validation still verifies its checksum.
+          # Fetch the release archive from the Fossies mirror. The upstream zlib
+          # host is returning a small error page to GitHub-hosted runners.
+          # kos-ports distinfo still verifies the official SHA-256 checksum.
           mkdir -p "$KOS_PORTS/zlib/dist"
           curl --fail --location --retry 3 --retry-all-errors --connect-timeout 30 --max-time 180 \
             --output "$KOS_PORTS/zlib/dist/zlib-1.4.tar.gz" \
-            https://zlib.net/fossils/zlib-1.4.tar.gz
+            https://fossies.org/linux/misc/zlib-1.4.tar.gz
           make -C "$KOS_PORTS/zlib" install
           # kos-ports installs headers under include/zlib and the port's
           # private inst directory, not directly in include/.
