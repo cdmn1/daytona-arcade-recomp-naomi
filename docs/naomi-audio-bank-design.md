@@ -47,11 +47,15 @@ effects in the race phase.
    the current phase.
 2. Read the next bank from the resident image into SH-4 main-RAM staging/cache. Do not make
    an optical-media timing assumption or read a large asset synchronously in the game update.
-3. At a safe phase boundary, stop only the outgoing phase's one-shot/loop instances and
-   wait for AICAflow to report their release. Do not cut off a sound that the original game
-   intentionally carries across the boundary.
-4. Release the outgoing phase's AICA bank and flow allocations, then upload the incoming
-   phase's sample bank and flows. Keep the existing single-DMA ownership discipline.
+3. At a safe phase boundary, stop only outgoing instances that the original game stops.
+   Preserve one-shots that intentionally carry across the boundary. The pinned AICAflow
+   firmware ABI 8 has no deferred `afx_asset_release()`: `afx_asset_free(flow)` refuses
+   with an asset-reference error while any instance still uses that flow. Keep each retiring
+   flow handle and retry the free on later updates; do not use the 32-entry stop ring as a
+   complete lifetime ledger.
+4. Once every flow in the outgoing bank has been freed, release its sample bank, then upload
+   the incoming phase's sample bank and flows. Keep the existing single-DMA ownership
+   discipline.
 5. Where transition latency matters, stage the next bank in main RAM before the boundary.
    Upload it during a loading/transition pause or spread the transfer across idle waits.
 6. Keep music-bank lifetime independent from SFX-bank lifetime. The existing music loader
