@@ -51,19 +51,30 @@ static void voice_hint(const uint32_t *keys, unsigned n);
 static uint32_t le32(const uint8_t *p) { return (uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24; }
 static uint16_t le16(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }
 
-static void free_flows(void) {
+static int free_flows(void) {
+    int busy = 0;
     for (unsigned i = 0; i < sfx.count; ++i)
         if (sfx.entries[i].flow) {
-            /* AICAflow defers this release until the last instance ends. This is required
-             * for phase changes: an outgoing one-shot may outlive the phase that started it. */
-            const int result = afx_asset_release(sfx.entries[i].flow);
-            if (result) printf("Sound effects: releasing flow %06lx failed (%d)\n", (unsigned long)sfx.entries[i].key, result);
-            sfx.entries[i].flow = AFX_ASSET_INVALID;
+            /* AFX ABI 8 has no deferred asset-release API: a referenced flow must stay
+             * owned until its last instance is recycled. Keep its handle for a later retry. */
+            const int result = afx_asset_free(sfx.entries[i].flow);
+            if (result) {
+                printf("Sound effects: releasing flow %06lx failed (%d)\\n", (unsigned long)sfx.entries[i].key, result);
+                busy = 1;
+            } else sfx.entries[i].flow = AFX_ASSET_INVALID;
         }
+    if (busy) return 0;
     free(sfx.entries); sfx.entries = NULL; sfx.count = 0;
     free(sfx.words); sfx.words = NULL;
-    if (sfx.bank.asset) afx_bank_release(&sfx.bank);
+    if (sfx.bank.asset) {
+        const int result = afx_bank_release(&sfx.bank);
+        if (result) {
+            printf("Sound effects: releasing sample bank failed (%d)\\n", result);
+            return 0;
+        }
+    }
     sfx.bank = (afx_bank_t){0};
+    return 1;
 }
 
 static unsigned char *read_all(const char *path, uint32_t *size) {
@@ -167,7 +178,7 @@ int nm_sfx_init(const char *root) {
     return 1;
 fail:
     free(dsx);
-    free_flows();
+    (void)free_flows();
     return 0;
 }
 
@@ -872,7 +883,10 @@ void nm_sfx_shutdown(void (*wait_ms)(unsigned)) {
         if (!live && !busy) break;
         if (wait_ms) wait_ms(1);
     }
-    free_flows();
+    if (!free_flows()) {
+        puts("Sound effects: shutdown deferred; a flow is still referenced");
+        return;
+    }
     printf("Sound effects: shut down (started %u, without a flow %u, refused %u, engine layer starts %u, engine patches %u, put off %u)\n",
            sfx.stats.started, sfx.stats.missing, sfx.stats.dropped, sfx.stats.layer_starts, sfx.stats.patches, sfx.stats.retries);
 #ifdef NM_SFX_VOICE_STREAM
