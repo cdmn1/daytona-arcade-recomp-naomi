@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
     write_assets(root);
     expect(nm_sfx_init(slash) && sfx.count == 13 && fake.flows_live == 13 && sfx.words, "the synthetic bank loads (%u)", sfx.count);
 
-    /* An outgoing bank may be released while one of its one-shots is still playing. */
+    /* A flow remains owned until its final one-shot instance has ended. */
     {
         static const unsigned char flow_image[16] = {'T','E','S','T'};
         afx_asset_t flow = AFX_ASSET_INVALID;
