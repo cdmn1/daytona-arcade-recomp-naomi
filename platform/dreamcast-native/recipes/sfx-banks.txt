@@ -6,10 +6,11 @@
 # race: effects available during the race, resident next to its music. E0-E9 remain here for race telemetry.
 #   9e01-9e2d  channel 14's effect kit: crashes, wall rub, passes, skid and rev, air drill, tool drop, coin, signal
 #   ae2109-c   the start voices THREE, TWO, ONE, GO
-#   ae2010     the crowd at every lap (9e11's sample: no bytes of its own), ae2002/ae2003 the slot machine
+#   ae2010     the crowd at every lap (shares 9e11's sample); ae2002/ae2003 the slot machine
 #
-# select: course/transmission selection and the "start your engines" sequence. The E0-E9 controlled engine
-#   loops are shared with race; AE2158 is the selection-to-race transition cue.
+# select: course/transmission selection and the "start your engines" sequence.
+#   E0-E9 are shared with race; phase 16 starts 9e11 (crowd cheer) and AE2001 together.
+#   9e11 is intentionally duplicated here because it also belongs to the race effect kit.
 #
 # voices: announcer phrases used beyond the countdown, including the race calls and the course/transmission selection
 # prompts from include/select.h: 58 ROM-rendered ADPCM phrases. They do
@@ -19,5 +20,5 @@ race pcm8 e0-e9
 race adpcm 9e01-9e2d
 race adpcm ae2109-ae210c ae2010
 select pcm8 e0-e9
-select adpcm ae2158
+select adpcm 9e11 ae2001 ae2158
 voices adpcm ae2002 ae2003 ae2100 ae2101 ae2105-ae2108 ae210f ae2111 ae2114-ae2117 ae211a ae2120-ae2131 ae2133-ae2138 ae215a ae215b ae215c-ae2160 ae2163-ae216d ae2170 ae2171 ae221c
