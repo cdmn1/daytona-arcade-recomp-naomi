@@ -28,7 +28,7 @@ static struct {
 } fake;
 static uint32_t controlled_keys_seen;
 /* One-shots end after this many frames (replays: the announcer's phrases last 1 to 2 s). */
-static unsigned fake_age = 30;
+static unsigned fake_age = 30, fake_frames;
 
 int afx_mem_stats(afx_mem_stats_t *s) { memset(s, 0, sizeof(*s)); s->free_bytes = 1000000; s->largest_free_block = 900000; return 0; }
 int afx_bank_load_file(afx_bank_t *bank, const char *path) {
@@ -117,6 +117,7 @@ int afx_instance_status(afx_instance_t i, afx_instance_status_t *out) {
 }
 /* AICAflow's event thread between updates: stopped instances and one-shots older than 30 frames end. */
 static void frame(void) {
+    ++fake_frames;
     for (unsigned k = 0; k < FAKE_INSTANCES; ++k) fake.inst[k].running = 0; /* a new flow has run to its PARK */
     for (unsigned k = 0; k < FAKE_INSTANCES; ++k)
         if (fake.inst[k].live && (fake.inst[k].stopping || (!fake.inst[k].controlled && ++fake.inst[k].age > fake_age)))
@@ -192,6 +193,18 @@ static void write_assets(const char *root) {
     put32(d + 24, flows);
     snprintf(path, sizeof(path), "%s/sfx/race.dsx", root);
     f = fopen(path, "wb"); fwrite(d, 1, flows, f); fclose(f);
+    /* Selection bank: AE2158 is intentionally isolated so its one-shot can finish before race-bank upload. */
+    unsigned char select_afb[64] = {0}, select_dsx[256] = {0};
+    put32(select_afb, AFX_BANK_MAGIC); put32(select_afb + 8, 0x3333); put32(select_afb + 12, 0x4444); put32(select_afb + 20, 32);
+    snprintf(path, sizeof(path), "%s/sfx/select.afb", root);
+    f = fopen(path, "wb"); fwrite(select_afb, 1, sizeof(select_afb), f); fclose(f);
+    memcpy(select_dsx, "DSX1", 4); put32(select_dsx + 4, 1); put32(select_dsx + 8, 1);
+    put32(select_dsx + 12, 164); put32(select_dsx + 20, 36); put32(select_dsx + 28, 0x3333); put32(select_dsx + 32, 0x4444);
+    for (unsigned v = 0; v < 128; ++v) select_dsx[36 + v] = (unsigned char)(v == 127 ? 255 : v * 2);
+    put32(select_dsx + 164, 0xae2158); put32(select_dsx + 172, 180); put32(select_dsx + 176, 16);
+    memcpy(select_dsx + 180, "FLOW", 4); put32(select_dsx + 24, 196);
+    snprintf(path, sizeof(path), "%s/sfx/select.dsx", root);
+    f = fopen(path, "wb"); fwrite(select_dsx, 1, 196, f); fclose(f);
     /* sfx/voices.pak (build_sfx.sh --voices stream): three phrases, a bank of 9000 sample bytes (two DMA chunks)
      * and a 16-byte flow each. */
     static unsigned char v[32768];
@@ -291,6 +304,15 @@ int main(int argc, char **argv) {
 
     write_assets(root);
     expect(nm_sfx_init(slash) && sfx.count == 13 && fake.flows_live == 13 && sfx.words, "the synthetic bank loads (%u)", sfx.count);
+    expect(nm_sfx_bank_switch("select", wait_ms) && !strcmp(sfx.bank_name, "select") &&
+           sfx.count == 1 && fake.flows_live == 1, "race -> selection bank switch");
+    const unsigned transition_start = fake.activations, transition_frame = fake_frames;
+    nm_sfx_command(0xae2158);
+    expect(fake.activations == transition_start + 1, "AE2158 starts from the selection bank");
+    expect(nm_sfx_bank_switch("race", wait_ms) && !strcmp(sfx.bank_name, "race") &&
+           fake.flows_live == 13, "selection -> race bank switch");
+    expect(fake_frames - transition_frame >= fake_age + 1,
+           "race bank waits for AE2158 to finish (%u frames)", fake_frames - transition_frame);
 
     /* A flow remains owned until its final one-shot instance has ended. */
     {
