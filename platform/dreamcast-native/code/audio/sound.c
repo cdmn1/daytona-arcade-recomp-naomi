@@ -696,6 +696,7 @@ int nm_sound_init(const char *asset_root) {
 
 int nm_sound_bank_switch(const char *bank) {
     if (sound.state == SOUND_OFF || !sound.sfx_up) return 1;
+    nm_sound_settle(); /* finish any music-bank DMA before the phase bank uploads */
     return nm_sfx_bank_switch(bank, wait_ms);
 }
 
