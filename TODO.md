@@ -2,6 +2,7 @@
 
 ## Audio bank residency
 - [ ] Replace the permanently resident `sfx/race.afb` bank with phase-specific attract/credit, course/transmission selection, race, and results banks. Keep the complete audio library in the NetDIMM image/main-RAM cache and upload only the active phase's working set to AICA. Preload the next phase in main RAM and switch banks at safe transitions; preserve effects/voices that intentionally overlap a transition. Add per-phase and transition-overlap AICA budget checks. See [NAOMI audio bank residency plan](docs/naomi-audio-bank-design.md).
+  - [x] First runtime slice: `AE2158` is isolated in `sfx/select.*`; selection entry switches from race to select, and race entry waits for the outgoing selection-bank flow to finish before loading `sfx/race.*`. Host coverage exercises the wait. Remaining work: classify the other phase commands and add attract/credit and results banks.
 - [ ] Complete the conservative phase inventory in [naomi-audio-phase-inventory.md](docs/naomi-audio-phase-inventory.md): trace every `9E` effect and results command before assigning final bank membership. A host `check` guard now preserves the full effect kit and known credit/podium/results callsites, but generated race/results command values remain unresolved. `9E12` is needed for credits outside races; `AE2158` must survive the select-to-race handoff until its one-shot ends. Do not remove effects based only on short captures.
 
 ## Course / transmission selection
