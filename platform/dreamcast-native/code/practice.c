@@ -550,6 +550,7 @@ fail:
  * when this build carries its data), and the start state the front end carried. */
 int nm_practice_race_from_select(unsigned course,unsigned transmission) {
     if(!practice_root || practice.failed) return 0;
+    if(!nm_sound_bank_switch("race")) { puts("FAIL: selection sound bank did not retire before race entry");return 0; }
     practice.last_us=practice.update_max_us=practice.frame_window_us=0;practice.frame_clock=(nm_frame_clock_t){0};
     practice.intervals=practice.frame_tenths_ms=0;practice.inspect_paused=0;
     practice.work_last_us=practice.work_window_us=practice.render_window_us=0;
