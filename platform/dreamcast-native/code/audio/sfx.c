@@ -126,17 +126,17 @@ static int load_bank(const char *name) {
     unsigned char *dsx = NULL;
     snprintf(path, sizeof(path), "%ssfx/%s.afb", sfx.root, name);
     int result = afx_bank_load_file(&sfx.bank, path);
-    if (result) { printf("Sound effects: cannot load %s (%d)\\n", path, result); sfx.bank = (afx_bank_t){0}; return 0; }
+    if (result) { printf("Sound effects: cannot load %s (%d)\n", path, result); sfx.bank = (afx_bank_t){0}; return 0; }
     snprintf(path, sizeof(path), "%ssfx/%s.dsx", sfx.root, name);
     if (!(dsx = read_all(path, &size)) || memcmp(dsx, "DSX1", 4) || le32(dsx + 4) != 1 || le32(dsx + 24) != size ||
         le32(dsx + 28) != sfx.bank.id.low || le32(dsx + 32) != sfx.bank.id.high) {
-        printf("Sound effects: %s is missing or not for this bank\\n", path);
+        printf("Sound effects: %s is missing or not for this bank\n", path);
         goto fail;
     }
     const uint32_t count = le32(dsx + 8), directory = le32(dsx + 12), gains = le32(dsx + 20);
     if (!count || count > 4096 || directory > size || (size - directory) / 16 < count || gains > size || size - gains < 128 ||
         !(sfx.entries = nm_calloc(count, sizeof(*sfx.entries))) || !load_engine(dsx, size, le32(dsx + 16))) {
-        printf("Sound effects: %s is malformed\\n", path);
+        printf("Sound effects: %s is malformed\n", path);
         goto fail;
     }
     nm_memcpy(sfx.gains, dsx + gains, 128);
@@ -146,13 +146,13 @@ static int load_bank(const char *name) {
         sfx_entry_t *entry = &sfx.entries[sfx.count];
         if ((i && key <= sfx.entries[sfx.count - 1].key) || e[4] > SFX_LAYER || offset > size || bytes > size - offset ||
             (e[4] == SFX_LAYER && e[5] >= SFX_LAYERS)) {
-            printf("Sound effects: %s entry %lu is malformed\\n", path, (unsigned long)i);
+            printf("Sound effects: %s entry %lu is malformed\n", path, (unsigned long)i);
             goto fail;
         }
         *entry = (sfx_entry_t){key, e[4], e[5], AFX_ASSET_INVALID};
         ++sfx.count;
         if ((result = afx_bank_flow_upload(&sfx.bank, dsx + offset, bytes, &entry->flow))) {
-            printf("Sound effects: flow %06lx not accepted (%d)\\n", (unsigned long)key, result);
+            printf("Sound effects: flow %06lx not accepted (%d)\n", (unsigned long)key, result);
             entry->flow = AFX_ASSET_INVALID;
             goto fail;
         }
@@ -170,7 +170,7 @@ static int load_bank(const char *name) {
     snprintf(sfx.bank_name, sizeof(sfx.bank_name), "%s", name);
     afx_mem_stats_t mem;
     if (!afx_mem_stats(&mem))
-        printf("Sound effects: %s bank, %u flows, %lu bytes; %lu bytes of AICA RAM free (largest %lu)\\n", name,
+        printf("Sound effects: %s bank, %u flows, %lu bytes; %lu bytes of AICA RAM free (largest %lu)\n", name,
                sfx.count, (unsigned long)sfx.bank.bytes, (unsigned long)mem.free_bytes, (unsigned long)mem.largest_free_block);
     return 1;
 fail:
@@ -212,7 +212,7 @@ int nm_sfx_bank_switch(const char *name, void (*wait_ms)(unsigned)) {
         wait_ms(1);
     }
     if (!released) {
-        printf("Sound effects: bank switch %s -> %s timed out; keeping current bank\\n", previous, name);
+        printf("Sound effects: bank switch %s -> %s timed out; keeping current bank\n", previous, name);
         sfx.switching = 0;
         return 0;
     }
@@ -224,8 +224,9 @@ int nm_sfx_bank_switch(const char *name, void (*wait_ms)(unsigned)) {
     nm_memset(sfx.controls, 0, sizeof(sfx.controls));
     nm_memset(sfx.gains, 0, sizeof(sfx.gains));
     sfx.words = NULL;
+    voice_quiesce(); /* the phrase stream shares AICAflow DMA ownership with bank uploads */
     if (!load_bank(name)) {
-        if (!load_bank(previous)) printf("Sound effects: could not restore %s bank\\n", previous);
+        if (!load_bank(previous)) printf("Sound effects: could not restore %s bank\n", previous);
         else sfx.up = 1;
         sfx.switching = 0;
         return 0;
