@@ -61,8 +61,8 @@ def main() -> int:
             raise SystemExit(f"engine layer {key} must remain in the race bank")
     if "9e12" not in owner:
         raise SystemExit("9E12 credit sound must remain assigned")
-    if "ae2158" not in owner:
-        raise SystemExit("AE2158 selection-to-race transition cue must remain assigned")
+    if owner.get("ae2158") != "select":
+        raise SystemExit("AE2158 selection-to-race transition cue must be in the select bank")
 
     practice = PRACTICE.read_text().lower()
     results = RESULTS.read_text().lower()
@@ -76,7 +76,7 @@ def main() -> int:
 
     print(f"PASS SFX inventory guard: {len(owner)} unique commands across {len(banks)} banks")
     print(f"  9E kit: {len(required_kit)} commands assigned; 9E12 currently in {owner['9e12']}")
-    print(f"  AE2158 transition cue: retained in {owner['ae2158']}")
+    print(f"  AE2158 transition cue: isolated in {owner['ae2158']} bank")
     print("  E0-E9 engine controllers: retained in race")
     print("  podium 9E2D and dynamic results entry/announcement paths: source callsites present")
     print("  NOTE: dynamic 9E/race/results command membership is not yet fully classified")
