@@ -28,6 +28,8 @@
 int nm_sound_init(const char *asset_root);
 /* One packed command, status byte in bits 23..16 (e.g. 0xae1005). */
 void nm_sound_command(uint32_t command);
+/* Switch the resident SFX phase bank at a loading transition; waits for outgoing one-shots. */
+int nm_sound_bank_switch(const char *bank);
 /* Once per updater call, in every mode, at its start. */
 void nm_sound_update(void);
 /* 1: a wanted recording loads (nm_sound_settle) but does not start until 0 (the attract's music with its cinematic). */
