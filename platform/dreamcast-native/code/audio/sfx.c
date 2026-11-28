@@ -25,7 +25,8 @@ typedef struct {
 #define SFX_TABLE_WORDS (8u * 128u * 3u + 2u * 16u * 3u)
 
 static struct {
-    int up;
+    int up, switching;
+    char root[192], bank_name[16];
     afx_bank_t bank;
     sfx_entry_t *entries;
     unsigned count;
@@ -119,25 +120,23 @@ static const sfx_entry_t *find(uint32_t key) {
     return lo < sfx.count && sfx.entries[lo].key == key ? &sfx.entries[lo] : NULL;
 }
 
-int nm_sfx_init(const char *root) {
+static int load_bank(const char *name) {
     char path[256];
     uint32_t size = 0;
     unsigned char *dsx = NULL;
-    if (sfx.up || !root) return sfx.up;
-    nm_memset(&sfx, 0, sizeof(sfx));
-    snprintf(path, sizeof(path), "%ssfx/race.afb", root);
+    snprintf(path, sizeof(path), "%ssfx/%s.afb", sfx.root, name);
     int result = afx_bank_load_file(&sfx.bank, path);
-    if (result) { printf("Sound effects: cannot load %s (%d): none\n", path, result); sfx.bank = (afx_bank_t){0}; return 0; }
-    snprintf(path, sizeof(path), "%ssfx/race.dsx", root);
+    if (result) { printf("Sound effects: cannot load %s (%d)\\n", path, result); sfx.bank = (afx_bank_t){0}; return 0; }
+    snprintf(path, sizeof(path), "%ssfx/%s.dsx", sfx.root, name);
     if (!(dsx = read_all(path, &size)) || memcmp(dsx, "DSX1", 4) || le32(dsx + 4) != 1 || le32(dsx + 24) != size ||
         le32(dsx + 28) != sfx.bank.id.low || le32(dsx + 32) != sfx.bank.id.high) {
-        printf("Sound effects: %s is missing or not for this bank: none\n", path);
+        printf("Sound effects: %s is missing or not for this bank\\n", path);
         goto fail;
     }
     const uint32_t count = le32(dsx + 8), directory = le32(dsx + 12), gains = le32(dsx + 20);
     if (!count || count > 4096 || directory > size || (size - directory) / 16 < count || gains > size || size - gains < 128 ||
         !(sfx.entries = nm_calloc(count, sizeof(*sfx.entries))) || !load_engine(dsx, size, le32(dsx + 16))) {
-        printf("Sound effects: %s is malformed: none\n", path);
+        printf("Sound effects: %s is malformed\\n", path);
         goto fail;
     }
     nm_memcpy(sfx.gains, dsx + gains, 128);
@@ -147,19 +146,18 @@ int nm_sfx_init(const char *root) {
         sfx_entry_t *entry = &sfx.entries[sfx.count];
         if ((i && key <= sfx.entries[sfx.count - 1].key) || e[4] > SFX_LAYER || offset > size || bytes > size - offset ||
             (e[4] == SFX_LAYER && e[5] >= SFX_LAYERS)) {
-            printf("Sound effects: %s entry %lu is malformed: none\n", path, (unsigned long)i);
+            printf("Sound effects: %s entry %lu is malformed\\n", path, (unsigned long)i);
             goto fail;
         }
         *entry = (sfx_entry_t){key, e[4], e[5], AFX_ASSET_INVALID};
         ++sfx.count;
         if ((result = afx_bank_flow_upload(&sfx.bank, dsx + offset, bytes, &entry->flow))) {
-            printf("Sound effects: flow %06lx not accepted (%d): none\n", (unsigned long)key, result);
+            printf("Sound effects: flow %06lx not accepted (%d)\\n", (unsigned long)key, result);
             entry->flow = AFX_ASSET_INVALID;
             goto fail;
         }
         if (entry->kind == SFX_LAYER) {
             sfx.table[entry->track].flow = entry->flow;
-            /* Its one setup's bank-relative sample address (CONTROL bits 6..0, SAMPLE_LOW): diagnostics. */
             const uint32_t image = bytes >= 20 ? le32(dsx + offset + 16) : bytes;
             if (image <= bytes - 4)
                 sfx.table[entry->track].sample = (uint32_t)(le16(dsx + offset + image) & 0x7f) << 16 | le16(dsx + offset + image + 2);
@@ -169,17 +167,71 @@ int nm_sfx_init(const char *root) {
     for (unsigned l = 0; l < SFX_LAYERS; ++l)
         if (sfx.words && !sfx.table[l].flow) { puts("Sound effects: an engine layer has no flow: no engine"); free(sfx.words); sfx.words = NULL; break; }
     sfx.stats.flows = sfx.count;
-    sfx.up = 1;
-    voice_init(root);
+    snprintf(sfx.bank_name, sizeof(sfx.bank_name), "%s", name);
     afx_mem_stats_t mem;
     if (!afx_mem_stats(&mem))
-        printf("Sound effects: %u flows, bank %lu bytes; %lu bytes of AICA RAM free (largest %lu)\n", sfx.count,
-               (unsigned long)sfx.bank.bytes, (unsigned long)mem.free_bytes, (unsigned long)mem.largest_free_block);
+        printf("Sound effects: %s bank, %u flows, %lu bytes; %lu bytes of AICA RAM free (largest %lu)\\n", name,
+               sfx.count, (unsigned long)sfx.bank.bytes, (unsigned long)mem.free_bytes, (unsigned long)mem.largest_free_block);
     return 1;
 fail:
     free(dsx);
     (void)free_flows();
     return 0;
+}
+
+int nm_sfx_init(const char *root) {
+    if (sfx.up || !root || strlen(root) >= sizeof(sfx.root)) return sfx.up;
+    nm_memset(&sfx, 0, sizeof(sfx));
+    strcpy(sfx.root, root);
+    if (!load_bank("race")) return 0;
+    sfx.up = 1;
+    voice_init(root);
+    return 1;
+}
+
+int nm_sfx_bank_switch(const char *name, void (*wait_ms)(unsigned)) {
+    if (!sfx.up || !name || !*name || strlen(name) >= sizeof(sfx.bank_name)) return 0;
+    if (!strcmp(name, sfx.bank_name)) return 1;
+    char previous[sizeof(sfx.bank_name)];
+    strcpy(previous, sfx.bank_name);
+    sfx.switching = 1;
+    for (unsigned l = 0; l < SFX_LAYERS; ++l) {
+        sfx.layer[l].want = 0;
+        if (sfx.layer[l].instance) (void)afx_instance_stop(sfx.layer[l].instance);
+    }
+    int released = 0;
+    for (unsigned attempt = 0; attempt < 30000; ++attempt) {
+        for (unsigned l = 0; l < SFX_LAYERS; ++l) {
+            afx_instance_status_t status;
+            if (sfx.layer[l].instance && afx_instance_status(sfx.layer[l].instance, &status) == -AFX_STALE_GENERATION)
+                sfx.layer[l].instance = 0;
+        }
+        if (free_flows()) { released = 1; break; }
+        if (!wait_ms) break;
+        wait_ms(1);
+    }
+    if (!released) {
+        printf("Sound effects: bank switch %s -> %s timed out; keeping current bank\\n", previous, name);
+        sfx.switching = 0;
+        return 0;
+    }
+    sfx.up = 0;
+    sfx.ring_next = 0;
+    nm_memset(sfx.ring, 0, sizeof(sfx.ring));
+    nm_memset(sfx.layer, 0, sizeof(sfx.layer));
+    nm_memset(sfx.table, 0, sizeof(sfx.table));
+    nm_memset(sfx.controls, 0, sizeof(sfx.controls));
+    nm_memset(sfx.gains, 0, sizeof(sfx.gains));
+    sfx.words = NULL;
+    if (!load_bank(name)) {
+        if (!load_bank(previous)) printf("Sound effects: could not restore %s bank\\n", previous);
+        else sfx.up = 1;
+        sfx.switching = 0;
+        return 0;
+    }
+    sfx.up = 1;
+    sfx.switching = 0;
+    return 1;
 }
 
 static void remember(afx_instance_t instance) {
@@ -722,7 +774,7 @@ void nm_sfx_hint(const uint32_t *keys, unsigned n) { voice_hint(keys, n); }
 uint32_t nm_sfx_idle(uint32_t budget_us) { return voice_idle(budget_us); }
 
 void nm_sfx_command(uint32_t command) {
-    if (!sfx.up) return;
+    if (!sfx.up || sfx.switching) return;
     const uint8_t status = (uint8_t)(command >> 16), a = (uint8_t)(command >> 8), b = (uint8_t)command;
     if ((status & 0xf0) == 0xa0 && a >= 0x20 && a <= 0x22) {
         const sfx_entry_t *entry = find(command);
@@ -807,6 +859,7 @@ static void engine_watch(unsigned l) {
 void nm_sfx_update(void) {
     if (!sfx.up) return;
     voice_update();
+    if (sfx.switching) return;
     if (!sfx.words) return;
     static const uint32_t field[WORDS] = {AFX_FIELD_PITCH, AFX_FIELD_DIRECT, AFX_FIELD_MIX}; /* ascending */
     unsigned wanted = 0;
