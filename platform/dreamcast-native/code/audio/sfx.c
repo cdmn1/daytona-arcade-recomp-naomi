@@ -60,7 +60,7 @@ static int free_flows(void) {
              * owned until its last instance is recycled. Keep its handle for a later retry. */
             const int result = afx_asset_free(sfx.entries[i].flow);
             if (result) {
-                printf("Sound effects: releasing flow %06lx failed (%d)\n", (unsigned long)sfx.entries[i].key, result);
+                if (result != -AFX_BUSY) printf("Sound effects: releasing flow %06lx failed (%d)\n", (unsigned long)sfx.entries[i].key, result);
                 busy = 1;
             } else sfx.entries[i].flow = AFX_ASSET_INVALID;
         }
