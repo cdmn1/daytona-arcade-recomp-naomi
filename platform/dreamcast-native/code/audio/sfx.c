@@ -192,6 +192,7 @@ int nm_sfx_init(const char *root) {
 int nm_sfx_bank_switch(const char *name, void (*wait_ms)(unsigned)) {
     if (!sfx.up || !name || !*name || strlen(name) >= sizeof(sfx.bank_name)) return 0;
     if (!strcmp(name, sfx.bank_name)) return 1;
+    if (!wait_ms) return 0;
     char previous[sizeof(sfx.bank_name)];
     strcpy(previous, sfx.bank_name);
     sfx.switching = 1;
@@ -200,14 +201,14 @@ int nm_sfx_bank_switch(const char *name, void (*wait_ms)(unsigned)) {
         if (sfx.layer[l].instance) (void)afx_instance_stop(sfx.layer[l].instance);
     }
     int released = 0;
-    for (unsigned attempt = 0; attempt < 30000; ++attempt) {
+    for (unsigned attempt = 0; ; ++attempt) {
         for (unsigned l = 0; l < SFX_LAYERS; ++l) {
             afx_instance_status_t status;
             if (sfx.layer[l].instance && afx_instance_status(sfx.layer[l].instance, &status) == -AFX_STALE_GENERATION)
                 sfx.layer[l].instance = 0;
         }
         if (free_flows()) { released = 1; break; }
-        if (!wait_ms) break;
+        if (attempt == 30000) puts("Sound effects: still waiting for outgoing phase sounds to finish");
         wait_ms(1);
     }
     if (!released) {
