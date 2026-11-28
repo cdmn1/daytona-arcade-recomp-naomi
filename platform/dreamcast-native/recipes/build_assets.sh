@@ -920,7 +920,7 @@ assets() {
     cp $G/packs/world-$set-mip.dnt $d/world.dnt
     if (( ! NOMUSIC )); then mkdir -p $d/music; cp $MU/music/t<01-45>.afb $MU/music/t<01-45>.afx $d/music/; fi
     if (( ! NOMUSIC )) && [[ -f $MA/music/t05.afx ]]; then mkdir -p $d/music/adpcm; cp $MA/music/t0[45].af[bx] $d/music/adpcm/; fi
-    if (( SFX )); then mkdir -p $d/sfx; cp $SX/sfx/race.afb $SX/sfx/race.dsx $d/sfx/; [[ ! -f $SX/sfx/voices.pak ]] || cp $SX/sfx/voices.pak $d/sfx/; fi
+    if (( SFX )); then mkdir -p $d/sfx; cp $SX/sfx/race.afb $SX/sfx/race.dsx $d/sfx/; [[ ! -f $SX/sfx/select.afb ]] || cp $SX/sfx/select.afb $SX/sfx/select.dsx $d/sfx/; [[ ! -f $SX/sfx/voices.pak ]] || cp $SX/sfx/voices.pak $d/sfx/; fi
   done
   {
     print -r -- "# make variables for the ELF build (platform/dreamcast-native/Makefile) against these outputs"
