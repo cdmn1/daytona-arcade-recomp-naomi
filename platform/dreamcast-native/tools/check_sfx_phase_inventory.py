@@ -33,6 +33,7 @@ def expand(spec: str) -> list[str]:
 def main() -> int:
     banks: dict[str, set[str]] = {}
     owners: dict[str, set[str]] = {}
+    shared = {*(f"e{n:x}" for n in range(10)), "9e11"}
     for number, raw in enumerate(RECIPE.read_text().splitlines(), 1):
         line = raw.split("#", 1)[0].strip()
         if not line:
@@ -47,7 +48,7 @@ def main() -> int:
         for spec in specs:
             for key in expand(spec):
                 assigned = owners.setdefault(key, set())
-                if assigned and key not in {f"e{n:x}" for n in range(10)}:
+                if assigned and key not in shared:
                     raise SystemExit(f"duplicate SFX key {key}: {', '.join(sorted(assigned))} and {bank}")
                 assigned.add(bank)
                 target.add(key)
@@ -62,6 +63,10 @@ def main() -> int:
             raise SystemExit(f"engine layer {key} must be present in both select and race banks")
     if owners.get("9e12") != {"race"}:
         raise SystemExit("9E12 credit sound must remain assigned exactly once")
+    if owners.get("9e11") != {"race", "select"}:
+        raise SystemExit("9E11 crowd cheer must be available in both race and selection banks")
+    if owners.get("ae2001") != {"select"}:
+        raise SystemExit("AE2001 selection start cue must be in the select bank")
     if owners.get("ae2158") != {"select"}:
         raise SystemExit("AE2158 selection-to-race transition cue must be in the select bank")
 
@@ -77,6 +82,8 @@ def main() -> int:
 
     print(f"PASS SFX inventory guard: {len(owners)} unique commands across {len(banks)} banks")
     print(f"  9E kit: {len(required_kit)} commands assigned; 9E12 currently in {owners['9e12']}")
+    print(f"  9E11 crowd cheer: shared by {', '.join(sorted(owners['9e11']))}")
+    print(f"  AE2001 selection start cue: isolated in {owners['ae2001']} bank")
     print(f"  AE2158 transition cue: isolated in {owners['ae2158']} bank")
     print("  E0-E9 engine controllers: present in select and race")
     print("  podium 9E2D and dynamic results entry/announcement paths: source callsites present")
