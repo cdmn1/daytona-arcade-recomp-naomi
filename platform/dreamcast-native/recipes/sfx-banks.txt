@@ -3,13 +3,13 @@
 #                        the same prefix (9e01-9e2d). CODING: pcm8 (afx_vgm's default) or adpcm (afx_vgm --adpcm).
 # Every bank BANK becomes sfx/BANK.afb + sfx/BANK.dsx; code/audio/sfx.c loads sfx/race.* at start-up, before any music.
 #
-# race: everything a race can play, resident next to the race music. AICA budget (build_sfx.sh checks it): the
-# arena AICAflow reports (2,072,768 bytes) less the largest recording the native race plays (03 The King of Speed,
-# 1,561,766 bytes with its flow) leaves about 511 KB.
-#   e0..e9     the ten engine layers (rpm x6, opponent left/right, slip, skid): true loops, PCM8
+# race: effects available during the race, resident next to its music. E0-E9 remain here for race telemetry.
 #   9e01-9e2d  channel 14's effect kit: crashes, wall rub, passes, skid and rev, air drill, tool drop, coin, signal
 #   ae2109-c   the start voices THREE, TWO, ONE, GO
 #   ae2010     the crowd at every lap (9e11's sample: no bytes of its own), ae2002/ae2003 the slot machine
+#
+# select: course/transmission selection and the "start your engines" sequence. The E0-E9 controlled engine
+#   loops are shared with race; AE2158 is the selection-to-race transition cue.
 #
 # voices: announcer phrases used beyond the countdown, including the race calls and the course/transmission selection
 # prompts from include/select.h: 58 ROM-rendered ADPCM phrases. They do
