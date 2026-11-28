@@ -85,6 +85,7 @@ def main() -> int:
     print(f"  9E11 crowd cheer: shared by {', '.join(sorted(owners['9e11']))}")
     print(f"  AE2001 selection start cue: isolated in {owners['ae2001']} bank")
     print(f"  AE2158 transition cue: isolated in {owners['ae2158']} bank")
+    print("  AE2112/AE2113 course announcements: assigned to streamed voices")
     print("  E0-E9 engine controllers: present in select and race")
     print("  podium 9E2D and dynamic results entry/announcement paths: source callsites present")
     print("  NOTE: dynamic 9E/race/results command membership is not yet fully classified")
