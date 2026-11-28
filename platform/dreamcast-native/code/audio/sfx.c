@@ -189,6 +189,7 @@ int nm_sfx_init(const char *root) {
     return 1;
 }
 
+/* sound.c settles its recording DMA before calling here; this retires the outgoing effects bank, then quiesces voice DMA before uploading the next bank. */
 int nm_sfx_bank_switch(const char *name, void (*wait_ms)(unsigned)) {
     if (!sfx.up || !name || !*name || strlen(name) >= sizeof(sfx.bank_name)) return 0;
     if (!strcmp(name, sfx.bank_name)) return 1;
