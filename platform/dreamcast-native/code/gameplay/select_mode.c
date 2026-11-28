@@ -112,6 +112,7 @@ int nm_select_mode_start(int scene, uint32_t credit_counter) {
     const nm_settings_t *settings=nm_game_settings();
     const unsigned country=settings ? settings->country : NM_COUNTRY_JPN;
     if(!nm_select_render_load(root,country)) return 0;
+    if(!nm_sound_bank_switch("select")) { puts("FAIL: could not load selection sound bank");return 0; }
     nm_sound_command(NM_MUSIC_GAME_START); /* 2850: phase 12 */
     nm_sound_settle();
     printf("Native game start: credit at 5010b0 %lu, scene %d\n",(unsigned long)credit_counter,scene);
