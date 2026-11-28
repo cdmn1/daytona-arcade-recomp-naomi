@@ -65,7 +65,7 @@ static struct {
     afx_bank_t bank;
     afx_asset_t flow;
     afx_instance_t instance;
-    int state;
+    int state, sfx_up;
     uint8_t track, loops;   /* resident recording (0: none) and whether it repeats */
     int wanted;             /* -1: no change; 0: stop; else the recording to play */
     uint8_t wanted_loops;
@@ -676,7 +676,7 @@ int nm_sound_init(const char *asset_root) {
     afx_set_end_callback(on_instance_end, NULL);
 #ifndef NM_SOUND_TEST
     /* The effects first: their bank stays at the bottom of the AICA arena, the recordings come and go above. */
-    nm_sfx_init(asset_root);
+    sound.sfx_up = nm_sfx_init(asset_root);
 #endif
     strcpy(sound.root, asset_root);
 #ifdef NM_SOUND_IO_WORKER
@@ -692,6 +692,11 @@ int nm_sound_init(const char *asset_root) {
     want(NM_SOUND_TEST, 1);
 #endif
     return 1;
+}
+
+int nm_sound_bank_switch(const char *bank) {
+    if (sound.state == SOUND_OFF || !sound.sfx_up) return 1;
+    return nm_sfx_bank_switch(bank, wait_ms);
 }
 
 void nm_sound_command(uint32_t command) {
