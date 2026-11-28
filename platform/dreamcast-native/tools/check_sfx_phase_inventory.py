@@ -32,7 +32,7 @@ def expand(spec: str) -> list[str]:
 
 def main() -> int:
     banks: dict[str, set[str]] = {}
-    owner: dict[str, str] = {}
+    owners: dict[str, set[str]] = {}
     for number, raw in enumerate(RECIPE.read_text().splitlines(), 1):
         line = raw.split("#", 1)[0].strip()
         if not line:
@@ -46,22 +46,23 @@ def main() -> int:
         target = banks.setdefault(bank, set())
         for spec in specs:
             for key in expand(spec):
-                if key in owner:
-                    raise SystemExit(f"duplicate SFX key {key}: {owner[key]} and {bank}")
-                owner[key] = bank
+                assigned = owners.setdefault(key, set())
+                if assigned and key not in {f"e{n:x}" for n in range(10)}:
+                    raise SystemExit(f"duplicate SFX key {key}: {', '.join(sorted(assigned))} and {bank}")
+                assigned.add(bank)
                 target.add(key)
 
     required_kit = {f"9e{n:02x}" for n in range(1, 0x2e)}
-    missing = sorted(required_kit - owner.keys())
+    missing = sorted(required_kit - owners.keys())
     if missing:
         raise SystemExit("9E effect kit has unassigned commands: " + ", ".join(missing))
 
     for key in (f"e{n:x}" for n in range(10)):
-        if owner.get(key) != "race":
-            raise SystemExit(f"engine layer {key} must remain in the race bank")
-    if "9e12" not in owner:
-        raise SystemExit("9E12 credit sound must remain assigned")
-    if owner.get("ae2158") != "select":
+        if owners.get(key) != {"race", "select"}:
+            raise SystemExit(f"engine layer {key} must be present in both select and race banks")
+    if owners.get("9e12") != {"race"}:
+        raise SystemExit("9E12 credit sound must remain assigned exactly once")
+    if owners.get("ae2158") != {"select"}:
         raise SystemExit("AE2158 selection-to-race transition cue must be in the select bank")
 
     practice = PRACTICE.read_text().lower()
@@ -74,10 +75,10 @@ def main() -> int:
         if token not in results:
             raise SystemExit(f"expected dynamic results command path disappeared: {token}")
 
-    print(f"PASS SFX inventory guard: {len(owner)} unique commands across {len(banks)} banks")
-    print(f"  9E kit: {len(required_kit)} commands assigned; 9E12 currently in {owner['9e12']}")
-    print(f"  AE2158 transition cue: isolated in {owner['ae2158']} bank")
-    print("  E0-E9 engine controllers: retained in race")
+    print(f"PASS SFX inventory guard: {len(owners)} unique commands across {len(banks)} banks")
+    print(f"  9E kit: {len(required_kit)} commands assigned; 9E12 currently in {owners['9e12']}")
+    print(f"  AE2158 transition cue: isolated in {owners['ae2158']} bank")
+    print("  E0-E9 engine controllers: present in select and race")
     print("  podium 9E2D and dynamic results entry/announcement paths: source callsites present")
     print("  NOTE: dynamic 9E/race/results command membership is not yet fully classified")
     return 0
