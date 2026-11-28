@@ -44,6 +44,8 @@ typedef struct {
 
 /* After afx_init. asset_root ends in '/'. 0: no effects (reported); the music is unaffected. */
 int nm_sfx_init(const char *asset_root);
+/* Switch the resident effects bank at a phase boundary. Existing one-shots are allowed to finish. */
+int nm_sfx_bank_switch(const char *bank, void (*wait_ms)(unsigned));
 /* One packed command (status in bits 23..16). Music commands are ignored here. */
 void nm_sfx_command(uint32_t command);
 /* Once per updater call: the engine layers' changes. */
