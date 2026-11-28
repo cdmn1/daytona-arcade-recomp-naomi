@@ -411,8 +411,8 @@ static int load_step(void) {
 #endif
     case LOAD_ROOM: {
         /* Room in the AICA RAM for the bank and its flow (the flow's header names its size). With the effects' race
-         * bank resident the PCM8 race pieces of Advanced (t04) and Expert (t05) do not fit: their ADPCM copy in
-         * music/adpcm/ (recipes/build_assets.sh step music_adpcm) does. */
+         * bank resident, some PCM8 course recordings do not fit: their ADPCM copies in music/adpcm/
+         * (recipes/build_assets.sh step music_adpcm) do. */
         if (!load_call_fits()) return 0;
         uint32_t flow = 0;
 #ifdef NM_SOUND_IO_WORKER
