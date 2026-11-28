@@ -21,4 +21,4 @@ race adpcm 9e01-9e2d
 race adpcm ae2109-ae210c ae2010
 select pcm8 e0-e9
 select adpcm 9e11 ae2001 ae2158
-voices adpcm ae2002 ae2003 ae2100 ae2101 ae2105-ae2108 ae210f ae2111 ae2114-ae2117 ae211a ae2120-ae2131 ae2133-ae2138 ae215a ae215b ae215c-ae2160 ae2163-ae216d ae2170 ae2171 ae221c
+voices adpcm ae2002 ae2003 ae2100 ae2101 ae2105-ae2108 ae210f ae2111 ae2112 ae2113 ae2114-ae2117 ae211a ae2120-ae2131 ae2133-ae2138 ae215a ae215b ae215c-ae2160 ae2163-ae216d ae2170 ae2171 ae221c
